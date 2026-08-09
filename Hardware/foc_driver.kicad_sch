@@ -1,7 +1,7 @@
 (kicad_sch
-	(version 20250114)
+	(version 20260306)
 	(generator "eeschema")
-	(generator_version "9.0")
+	(generator_version "10.0")
 	(uuid "07a63e33-0b4d-4f71-953d-91d6e5fc694b")
 	(paper "A4")
 	(title_block
@@ -437,11 +437,13 @@
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0.0000)
+			(color 0 0 0 0)
 		)
 		(uuid "5bd75e9b-ca0b-4853-96e4-ed138df53f18")
 		(property "Sheetname" "MCU"
 			(at 96.52 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -451,6 +453,8 @@
 		)
 		(property "Sheetfile" "MCU.kicad_sch"
 			(at 96.52 152.9846 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -929,11 +933,13 @@
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0.0000)
+			(color 0 0 0 0)
 		)
 		(uuid "7636747a-cdd8-48e4-a004-102bf590e17d")
 		(property "Sheetname" "Communications"
 			(at 49.53 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -943,6 +949,8 @@
 		)
 		(property "Sheetfile" "Communications.kicad_sch"
 			(at 49.53 81.8646 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1011,11 +1019,13 @@
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0.0000)
+			(color 0 0 0 0)
 		)
 		(uuid "a563d9a9-7c5e-4dac-a691-e00297ad0e34")
 		(property "Sheetname" "Gate Driver"
 			(at 162.56 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1025,6 +1035,8 @@
 		)
 		(property "Sheetfile" "Gate Driver.kicad_sch"
 			(at 162.56 79.3246 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1223,11 +1235,13 @@
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0.0000)
+			(color 0 0 0 0)
 		)
 		(uuid "bed8668e-8d6d-4713-9517-ef3a7c897f69")
 		(property "Sheetname" "Inverter"
 			(at 214.63 45.0084 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1237,6 +1251,8 @@
 		)
 		(property "Sheetfile" "Inverter.kicad_sch"
 			(at 214.63 107.2646 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1395,11 +1411,13 @@
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0.0000)
+			(color 0 0 0 0)
 		)
 		(uuid "daa9eef8-438d-4882-a638-d4ba955d38a8")
 		(property "Sheetname" "Encoders"
 			(at 162.56 116.1284 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1409,6 +1427,8 @@
 		)
 		(property "Sheetfile" "Encoders.kicad_sch"
 			(at 162.56 145.3646 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)

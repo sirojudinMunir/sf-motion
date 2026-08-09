@@ -266,7 +266,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "2.0"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -867,7 +867,7 @@
       {
         "filename": "foc_driver.kicad_sch",
         "name": "foc_driver",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "07a63e33-0b4d-4f71-953d-91d6e5fc694b"
       }
     ],
     "used_designators": "",
@@ -876,7 +876,7 @@
   "sheets": [
     [
       "07a63e33-0b4d-4f71-953d-91d6e5fc694b",
-      "Root"
+      "foc_driver"
     ],
     [
       "5bd75e9b-ca0b-4853-96e4-ed138df53f18",
