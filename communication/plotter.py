@@ -12,8 +12,7 @@ import time
 import io
 import contextlib
 import traceback
-from motor_protocol import MotorProtocol
-# from MotorProtocol import MotorProtocol
+from MotorProtocol import MotorProtocol
 import queue
 import colorsys
 
@@ -451,17 +450,18 @@ class LivePlotter(QtWidgets.QMainWindow):
             print("Serial connection established successfully")
 
             # setup plotter
-            # motor_mode = self.motor.get_foc_motor_mode()
-            # if motor_mode == 0:
-            #     self.motor.plotter_add_line('Is_ref')
-            #     self.motor.plotter_add_line('id')
-            #     self.motor.plotter_add_line('iq')
-            # elif motor_mode == 1:
-            #     self.motor.plotter_add_line('rpm_ref')
-            #     self.motor.plotter_add_line('actual_rpm')
-            # elif motor_mode == 2:
-            #     self.motor.plotter_add_line('pos_ref')
-            #     self.motor.plotter_add_line('actual_angle')
+            motor_mode = self.motor.get_foc_motor_mode()['mode']
+            print(f'motor mode: {motor_mode}')
+            if motor_mode == 0:
+                self.motor.plotter_add_line('Is_ref')
+                self.motor.plotter_add_line('id')
+                self.motor.plotter_add_line('iq')
+            elif motor_mode == 1:
+                self.motor.plotter_add_line('rpm_ref')
+                self.motor.plotter_add_line('actual_rpm')
+            elif motor_mode == 2:
+                self.motor.plotter_add_line('pos_ref')
+                self.motor.plotter_add_line('actual_angle')
 
             
         except serial.SerialException as e:

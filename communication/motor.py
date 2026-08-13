@@ -1,4 +1,3 @@
-from motor_protocol import MotorProtocol
 from plotter import *
 import numpy as np
 import serial
@@ -12,13 +11,13 @@ pg.setConfigOptions(antialias=True, useOpenGL=True)
 
 plotter = LivePlotter(
     max_points=1000,
-    port='COM9',  # No auto-connect
+    port=None,  # No auto-connect
     baudrate=115200
 )
 
 # Run ------------------------------------------
-# plotter.show()
-# sys.exit(app.exec_())
+plotter.show()
+sys.exit(app.exec_())
 
 m = plotter.motor
 
