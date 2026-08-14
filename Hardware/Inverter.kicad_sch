@@ -5235,7 +5235,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 157.4799 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5259,7 +5259,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 160.02 0)
 			(hide yes)
 			(show_name no)
@@ -5282,7 +5282,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 156.21 0)
 			(hide yes)
 			(show_name no)
@@ -5395,7 +5395,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 99.0599 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5419,7 +5419,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -5442,7 +5442,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -6824,7 +6824,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 115.5699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6848,7 +6848,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 118.11 0)
 			(hide yes)
 			(show_name no)
@@ -6871,7 +6871,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 114.3 0)
 			(hide yes)
 			(show_name no)
@@ -10368,7 +10368,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 57.1499 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10392,7 +10392,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -10415,7 +10415,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -12079,7 +12079,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 40.6399 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -12103,7 +12103,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -12126,7 +12126,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -13585,7 +13585,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "CSD18532NQ5B"
+		(property "Value" "WSD30100DN56"
 			(at 88.9 173.9899 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13609,7 +13609,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/gpn/csd18532nq5b"
+		(property "Datasheet" ""
 			(at 87.63 176.53 0)
 			(hide yes)
 			(show_name no)
@@ -13632,7 +13632,7 @@
 				)
 			)
 		)
-		(property "LCSC Part #" "C2862136"
+		(property "LCSC Part #" "C148393"
 			(at 82.55 172.72 0)
 			(hide yes)
 			(show_name no)
