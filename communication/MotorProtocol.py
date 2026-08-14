@@ -2,6 +2,7 @@ import json
 import struct
 import time
 import serial
+import numpy as np
 
 class MotorProtocol:
     def __init__(self, serial_conn=None, acq_thread=None, config_file='motor_commands.json'):
@@ -198,3 +199,38 @@ class MotorProtocol:
             results[resp_name] = value
         
         return results
+
+    def self_commissioning(self):
+        self.start_measure_motor_Rs()
+        time.sleep(1)
+        self.start_measure_motor_Ld()
+        time.sleep(1)
+        self.start_measure_motor_Lq()
+        time.sleep(1)
+        self.get_motor_param()
+        self.set_foc_bandwidth(500)
+        self.start_calibrate_abs_encoder()
+
+    def get_motor_param(self):
+        pole_pairs = self.get_pole_pairs()['value']
+        rs = self.get_rs()['value']
+        ld = self.get_ld()['value']
+        lq = self.get_lq()['value']
+        print(f'pole pairs:{pole_pairs}')
+        print(f'Rs:{rs}')
+        print(f'Ld:{ld}')
+        print(f'Lq:{lq}')
+
+    def set_foc_bandwidth(self,bw=100):
+        rs = self.get_rs()['value'] / 2
+        ld = self.get_ld()['value'] / 2
+        lq = self.get_lq()['value'] / 2
+        omega = 2 * np.pi * bw
+        id_kp = ld * omega
+        id_ki = rs * omega
+        iq_kp = lq * omega
+        iq_ki = rs * omega
+        print(f'id: kp={id_kp} ki={id_ki}')
+        print(f'iq: kp={iq_kp} ki={iq_ki}')
+        self.set_pid_id(id_kp, id_ki, 0)
+        self.set_pid_iq(iq_kp, iq_ki, 0)

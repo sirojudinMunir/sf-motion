@@ -256,7 +256,8 @@ class LivePlotter(QtWidgets.QMainWindow):
             "thread": self.acq_thread,
             "motor": self.motor if hasattr(self, 'motor') else None,
             "np": np,
-            "pg": pg,
+            "pg": pg
+
         }
         self.setup_console_completion()
 

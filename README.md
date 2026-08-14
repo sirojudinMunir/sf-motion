@@ -142,7 +142,7 @@ You can also use the Upload button in the PlatformIO interface in VS Code.
 After uploading the firmware, follow these steps:
 
 1. Make sure the D3 LED is blinking after the firmware starts.
-2. Connect the BLDC/PMSM motor wires to the FOC Driver board.
+2. Connect the BLDC/PMSM motor wires to the FOC Driver board. Make sure the diametrical magnet is securely mounted on the motor shaft and properly aligned with the magnetic encoder on the FOC Driver board. The board should be positioned directly beneath the magnet.
 3. If you are using an external power supply, set the current limit to 1 A for the initial test. This helps prevent damage if there is an unexpected issue with the board or motor.
 4. Connect the USB Type-C cable to the board.
 5. Run the Python motor control program:
@@ -151,11 +151,33 @@ After uploading the firmware, follow these steps:
     ```
 6. Select the correct COM port and click Connect.
 
-7. Before running the motor, calibrate the encoder:
+7. Before running the motor, set the correct motor pole pairs:
     ``` python
-    m.calibrate_encoder()
+    motor.set_pole_pairs(<your_motor_pole_pairs>)
     ```
-8. Make sure the motor completes the encoder calibration and spins for approximately one second during the calibration process.
+    Replace <your_motor_pole_pairs> with the actual number of pole pairs of your motor.
+8. Run the self-commissioning process:
+    ``` python
+    motor.self_commissioning()
+    ```
+    The self-commissioning process measures the motor resistance and inductance and calibrates the magnetic encoder.
+    >Important: During encoder calibration, make sure the motor rotates counter-clockwise (CCW). If the motor rotates in the opposite direction, swap any two motor wires to reverse the rotation.
+    Automatic motor direction detection will be implemented in a future version.
+9. Save configuration
+    ``` python
+    motor.save_config()
+    ```
+10. Test the FOC motor modes using:
+    ``` python
+    motor.set_foc_motor_mode(<mode>)
+    ```
+    Available modes:
+
+    0 -> for current control mode  
+    1 -> for speed control mode  
+    2 -> for position control mode  
+    5 -> for open-loop mode  
+    6 -> for disable the motor
 
 > ⚠️ Keep the power supply current limit low during the first test. Do not increase the voltage or current limit until the board, encoder, and motor are confirmed to be working correctly.
 
