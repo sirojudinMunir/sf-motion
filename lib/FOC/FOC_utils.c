@@ -26,9 +26,11 @@ void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_m
     hfoc->get_pwm_res = get_pwm_res;
 }
 
-void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_mech_rpm)(void)) {
+void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_mech_rpm)(void), float *p_abs_encoder_error_LUT, dir_mode_t sensor_dir) {
     hfoc->get_mech_degre = get_mech_degre;
     hfoc->get_mech_rpm = get_mech_rpm;
+    hfoc->p_abs_encoder_error_comp_deg = p_abs_encoder_error_LUT;
+	hfoc->sensor_dir = sensor_dir;
 }
 
 void foc_motor_init(foc_t *hfoc, uint8_t pole_pairs, float kv) {
@@ -38,13 +40,6 @@ void foc_motor_init(foc_t *hfoc, uint8_t pole_pairs, float kv) {
 
 	hfoc->pole_pairs = pole_pairs;
 	hfoc->kv = kv;
-}
-
-void foc_sensor_init(foc_t *hfoc, float m_rad_offset, dir_mode_t sensor_dir) {
-	if (hfoc == NULL) return;
-
-	hfoc->m_angle_offset = m_rad_offset;
-	hfoc->sensor_dir = sensor_dir;
 }
 
 void foc_gear_reducer_init(foc_t *hfoc, float ratio) {
@@ -126,38 +121,44 @@ void foc_sensored_calc_electric_angle(foc_t *hfoc) {
         return;
     }
 
+    float e_rad = 0.0f;
     float angle_deg = hfoc->get_mech_degre();
 
-    // Normalize mechanical angle
-    hfoc->m_angle_rad = DEG_TO_RAD(angle_deg) - hfoc->m_angle_offset;
+    hfoc->m_angle_rad = DEG_TO_RAD(angle_deg);
     norm_angle_rad(&hfoc->m_angle_rad);
 
-    // Calculate raw electric angle
-    float e_rad = hfoc->m_angle_rad * hfoc->pole_pairs;
+    if (hfoc->p_abs_encoder_error_comp_deg != NULL) {
+        float lut_idx_f = (angle_deg / 360.0f) * ERROR_LUT_SIZE;
+        lut_idx_f = fmodf(lut_idx_f, ERROR_LUT_SIZE);
+        if (lut_idx_f < 0) {
+            lut_idx_f += ERROR_LUT_SIZE;
+        }
+
+        int idx0 = (int)lut_idx_f;
+        if (idx0 >= 0 && idx0 < ERROR_LUT_SIZE) {
+            int idx1 = (idx0 + 1) % ERROR_LUT_SIZE;
+            float frac = lut_idx_f - (float)idx0;
+
+            float m_deg_comp = hfoc->p_abs_encoder_error_comp_deg[idx0] * (1.0f - frac) + 
+                               hfoc->p_abs_encoder_error_comp_deg[idx1] * frac;
+
+            hfoc->m_angle_rad_comp = DEG_TO_RAD(m_deg_comp);
+        } 
+        else {
+            hfoc->m_angle_rad_comp = 0.0f;
+        }
+    } 
+    else {
+        hfoc->m_angle_rad_comp = 0.0f;
+    }
     
+    e_rad = hfoc->m_angle_rad_comp * hfoc->pole_pairs;
+
     // Handle sensor direction
     if (hfoc->sensor_dir == REVERSE_DIR) {
         e_rad = TWO_PI - e_rad;
     }
 
-    hfoc->e_angle_rad = e_rad;
-
-    // Calculate LUT index with wrap-around
-    float lut_idx_f = (hfoc->m_angle_rad / TWO_PI) * ERROR_LUT_SIZE;
-    lut_idx_f = fmodf(lut_idx_f, ERROR_LUT_SIZE);
-    if (lut_idx_f < 0) {
-        lut_idx_f += ERROR_LUT_SIZE;
-    }
-
-    // Get neighboring indices with wrap-around
-    int idx0 = (int)lut_idx_f % ERROR_LUT_SIZE;
-    int idx1 = (idx0 + 1) % ERROR_LUT_SIZE;
-    float frac = lut_idx_f - (float)idx0;
-
-    // Linear interpolation
-    float encoder_error = 0;
-    e_rad += encoder_error;
-    
     // Normalize final electric angle
     norm_angle_rad(&e_rad);
 

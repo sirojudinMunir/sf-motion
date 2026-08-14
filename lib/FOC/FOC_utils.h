@@ -91,9 +91,8 @@ typedef struct {
 	float flux_linkage;
 
 	float m_angle_rad; // mechanical angle
-	float e_angle_rad; // electrical angle
+	float m_angle_rad_comp;
 	float e_angle_rad_comp; // electrical angle
-	float m_angle_offset;
 	float e_rad;
 	float last_e_rad;
 	float e_omega;
@@ -159,6 +158,8 @@ typedef struct {
 	int sample_index;
 	_Bool collect_sample_flag;
 
+	float *p_abs_encoder_error_comp_deg; // ERROR_LUT_SIZE
+
 	void (*enable_motor)(void);
 	void (*disable_motor)(void);
 	uint32_t (*get_pwm_res)(void);
@@ -167,9 +168,8 @@ typedef struct {
 }foc_t;
 
 void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_motor)(void), uint32_t (*get_pwm_res)(void));
-void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_mech_rpm)(void));
+void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_mech_rpm)(void), float *p_abs_encoder_error_LUT, dir_mode_t sensor_dir);
 void foc_motor_init(foc_t *hfoc, uint8_t pole_pairs, float kv);
-void foc_sensor_init(foc_t *hfoc, float m_rad_offset, dir_mode_t sensor_dir);
 void foc_gear_reducer_init(foc_t *hfoc, float ratio);
 void foc_set_limit_current(foc_t *hfoc, float i_limit);
 void foc_sensored_calc_electric_angle(foc_t *hfoc);

@@ -41,10 +41,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-
-#define POLE_PAIR	(7)
-#define ENCODER_OFFSET_RAD (DEG_TO_RAD(297.242249f))
-
 #define usb_print(fmt, ...)                                                 \
   do {                                                                      \
     snprintf(usb_send_buff, sizeof(usb_send_buff), fmt, ##__VA_ARGS__);     \
@@ -234,7 +230,8 @@ static void init_foc(void) {
 
   storage_init(&hstorage1, write_flash, read_flash);
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
-  foc_feedback_sensor_init(&hfoc1, motor1_as5047p_get_mech_deg, motor1_as5047p_get_rpm);
+  foc_feedback_sensor_init(&hfoc1, motor1_as5047p_get_mech_deg, motor1_as5047p_get_rpm, 
+                           hstorage1.memory.encoder_config.error_comp_deg, NORMAL_DIR);
   com_init(&husb_com, usb_recv_data, usb_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
   com_init(&hcan_com, can_recv_data, can_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
 
@@ -262,12 +259,11 @@ static void init_foc(void) {
   pid_reset(&hfoc1.fw_ctrl);
   pid_set_ts(&hfoc1.fw_ctrl, FOC_TS);
 
-  foc_motor_init(&hfoc1, POLE_PAIR, 360.0f);
+  foc_motor_init(&hfoc1, hstorage1.memory.motor_config.pole_pairs, 360.0f);
 
   foc_set_mode(&hfoc1, FOC_MODE_HYBRID);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
-  foc_sensor_init(&hfoc1, ENCODER_OFFSET_RAD, NORMAL_DIR);
   foc_gear_reducer_init(&hfoc1, 1.0f);
   foc_set_limit_current(&hfoc1, 10.0f);
 
@@ -302,6 +298,8 @@ static void self_commissioning_update(void) {
         break;
       case SC_SEQUENCE_START_MEASURE_LQ:
         foc_set_motor_Lq(&hfoc1, sc_get_Lq(&hsc1));
+        break;
+      case SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER:
         break;
     }
   }

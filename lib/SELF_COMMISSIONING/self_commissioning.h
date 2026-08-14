@@ -12,6 +12,7 @@ typedef enum {
     SC_SEQUENCE_START_MEASURE_RS,
     SC_SEQUENCE_START_MEASURE_LD,
     SC_SEQUENCE_START_MEASURE_LQ,
+    SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER,
 }sc_sequence_t;
 
 typedef struct {
@@ -21,7 +22,10 @@ typedef struct {
     float signal_offset;
     uint32_t signal_delay_t;
     uint32_t signal_t;
+    uint32_t last_signal_t;
     uint32_t signal_start_t;
+    float signal_degree;
+    float abs_encoder_deg_initial;
     _Bool signal_flag;
     _Bool measure_done_flag;
     foc_t *p_foc;
@@ -36,6 +40,7 @@ void sc_init(self_commissioning_t *sc, foc_t *hfoc);
 int sc_start_measure_motor_resistance(self_commissioning_t *sc);
 int sc_start_measure_motor_Ld(self_commissioning_t *sc);
 int sc_start_measure_motor_Lq(self_commissioning_t *sc);
+int sc_start_calibrate_abs_encoder(self_commissioning_t *sc);
 void sc_update(self_commissioning_t *sc, float Ts);
 _Bool sc_is_measure_done(self_commissioning_t *sc);
 sc_sequence_t sc_get_seq(self_commissioning_t *sc);

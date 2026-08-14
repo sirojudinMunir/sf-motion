@@ -53,6 +53,9 @@ float plotter_get_value_from_dictionary(com_t *com, uint16_t dictionary_addr) {
     case 0xA011: value = com->pfoc->Is_ref; break;
     case 0xA012: value = com->pfoc->rpm_ref; break;
     case 0xA013: value = com->pfoc->pos_ref; break;
+    
+    case 0xA014: value = com->pfoc->m_angle_rad; break;
+    case 0xA015: value = com->pfoc->m_angle_rad_comp; break;
   }
   return value;
 }
@@ -534,6 +537,13 @@ int8_t com_start_measure_lq(com_t *com) {
   return ret_val;
 }
 
+int8_t com_start_calibrate_abs_encoder(com_t *com) {
+  int8_t ret_val = 0;
+  if (sc_start_calibrate_abs_encoder(com->psc) != 0) ret_val = -1;
+  com_send_value(com, &ret_val, sizeof(ret_val));
+  return ret_val;
+}
+
 /****************************************************************************** */
 
 int8_t com_foc_get_actual_e_rad(com_t *com) {
@@ -606,8 +616,9 @@ void com_update(com_t *com) {
       case 49: com_start_measure_resistance(com); break;
       case 50: com_start_measure_ld(com); break;
       case 51: com_start_measure_lq(com); break;
+      case 52: com_start_calibrate_abs_encoder(com); break;
 
-      case 52: com_foc_get_actual_e_rad(com); break;
+      case 53: com_foc_get_actual_e_rad(com); break;
     }
   }
   else {

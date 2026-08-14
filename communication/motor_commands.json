@@ -555,8 +555,13 @@
             "args": [],
             "response": [{"name": "err_code", "type": "uint8"}]
         },
-        "get_foc_actual_e_rad": {
+        "start_calibrate_abs_encoder": {
             "code": 52,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_actual_e_rad": {
+            "code": 53,
             "args": [],
             "response": [
                 {
@@ -586,6 +591,8 @@
         "actual_angle": 40976,
         "Is_ref": 40977,
         "rpm_ref": 40978,
-        "pos_ref": 40979
+        "pos_ref": 40979,
+        "m_angle_rad": 40980,
+        "m_angle_rad_comp": 40981
     }
 }

@@ -54,6 +54,24 @@ int sc_start_measure_motor_Lq(self_commissioning_t *sc) {
     return 0;
 }
 
+int sc_start_calibrate_abs_encoder(self_commissioning_t *sc) {
+    if (sc->signal_flag) return -1;
+    sc->signal_degree = 0.0f;
+    sc->signal_t = 0;
+    sc->last_signal_t = 0;
+    sc->signal_start_t = 0;
+    sc->signal_delay_t = 0.2f/(1.0f/20000.0f);
+    if (sc->p_foc->p_abs_encoder_error_comp_deg) {
+        for (int i = 0; i < ERROR_LUT_SIZE; i++) {
+            sc->p_foc->p_abs_encoder_error_comp_deg[i] = 0;
+        }
+    }
+    foc_set_motor_mode(sc->p_foc, MOTOR_MODE_VOLTAGE_CONTROL);
+    sc->seq = SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER;
+    sc->signal_flag = 1;
+    return 0;
+}
+
 float sc_estimate_resistance(self_commissioning_t *sc) {
     float mean_vd = 0, mean_id = 0;
 
@@ -113,9 +131,7 @@ float sc_estimate_inductance(self_commissioning_t *sc, float Ts) {
     return fabsf(L_est);
 }
 
-void sc_update(self_commissioning_t *sc, float Ts) {
-    if (!sc->signal_flag) return;
-
+void sc_measure_Rs_update(self_commissioning_t *sc) {
     float vd = 0, vq = 0;
     float id = 0, iq = 0;
 
@@ -127,66 +143,167 @@ void sc_update(self_commissioning_t *sc, float Ts) {
         idx = sc->signal_t - sc->signal_start_t;
     }
     foc_get_idiq(sc->p_foc, &id, &iq);
-
+    
     if (idx >= MAX_DATA_ACQ_BUFFER) {
-        switch (sc->seq) {
-            case SC_SEQUENCE_START_MEASURE_RS: {
-                sc->i_buffer[idx - 1] = id;
-                sc->Rs = sc_estimate_resistance(sc);
-                break;
-            }
-            case SC_SEQUENCE_START_MEASURE_LD: {
-                sc->i_buffer[idx - 1] = id;
-                sc->Ld = sc_estimate_inductance(sc, Ts);
-                break;
-            }
-            case SC_SEQUENCE_START_MEASURE_LQ: {
-                sc->i_buffer[idx - 1] = iq;
-                sc->Lq = sc_estimate_inductance(sc, Ts);
-                break;
-            }
-            default:
-                break;
-        }
+        sc->i_buffer[idx - 1] = id;
+        sc->Rs = sc_estimate_resistance(sc);
         foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
         sc->signal_flag = 0;
         sc->measure_done_flag = 1;
         return;
     }
 
+    vd = sc->signal_offset;
+    sc->v_buffer[idx] = vd;
+    if (idx > 0) {
+        sc->i_buffer[idx - 1] = id;
+    }
+    foc_set_open_loop_voltage(sc->p_foc, vd, vq, 0);
+    sc->signal_t++;
+}
+
+void sc_measure_Ld_update(self_commissioning_t *sc, float Ts) {
+    float vd = 0, vq = 0;
+    float id = 0, iq = 0;
+
+    uint32_t idx = 0;
+    if (sc->signal_t < sc->signal_delay_t) {
+        sc->signal_start_t = sc->signal_t;
+    }
+    else {
+        idx = sc->signal_t - sc->signal_start_t;
+    }
+    foc_get_idiq(sc->p_foc, &id, &iq);
+    
+    if (idx >= MAX_DATA_ACQ_BUFFER) {
+        sc->i_buffer[idx - 1] = id;
+        sc->Ld = sc_estimate_inductance(sc, Ts);
+        foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
+        sc->signal_flag = 0;
+        sc->measure_done_flag = 1;
+        return;
+    }
+
+    float rad = sc->signal_omega * (float)sc->signal_t * Ts;
+    vd = sc->signal_amplitude * fast_sin(rad);
+    sc->v_buffer[idx] = vd;
+    if (idx > 0) {
+        sc->i_buffer[idx - 1] = id;
+    }
+    foc_set_open_loop_voltage(sc->p_foc, vd, vq, 0);
+    sc->signal_t++;
+}
+
+void sc_measure_Lq_update(self_commissioning_t *sc, float Ts) {
+    float vd = 0, vq = 0;
+    float id = 0, iq = 0;
+
+    uint32_t idx = 0;
+    if (sc->signal_t < sc->signal_delay_t) {
+        sc->signal_start_t = sc->signal_t;
+    }
+    else {
+        idx = sc->signal_t - sc->signal_start_t;
+    }
+    foc_get_idiq(sc->p_foc, &id, &iq);
+    
+    if (idx >= MAX_DATA_ACQ_BUFFER) {
+        sc->i_buffer[idx - 1] = iq;
+        sc->Lq = sc_estimate_inductance(sc, Ts);
+        foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
+        sc->signal_flag = 0;
+        sc->measure_done_flag = 1;
+        return;
+    }
+
+    float rad = sc->signal_omega * (float)sc->signal_t * Ts;
+    vq = sc->signal_amplitude * fast_sin(rad);
+    vd = 1.0f;
+    sc->v_buffer[idx] = vq;
+    if (idx > 0) {
+        sc->i_buffer[idx - 1] = iq;
+    }
+    foc_set_open_loop_voltage(sc->p_foc, vd, vq, 0);
+    sc->signal_t++;
+}
+
+void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
+    float vd = 1.2f;
+    float vq = 0.0f;
+    
+    float mech_degree = sc->p_foc->get_mech_degre();
+
+    if (sc->signal_t < sc->signal_delay_t) {
+        sc->abs_encoder_deg_initial = mech_degree;
+        sc->signal_degree = 0.0f;
+    }
+    else {
+        if (sc->signal_t - sc->last_signal_t >= 100) {
+            sc->last_signal_t = sc->signal_t;
+            if (sc->p_foc->p_abs_encoder_error_comp_deg) {
+                float lut_idx_f = (mech_degree / 360.0f) * ERROR_LUT_SIZE;
+                lut_idx_f = fmodf(lut_idx_f, ERROR_LUT_SIZE);
+                if (lut_idx_f < 0) {
+                    lut_idx_f += ERROR_LUT_SIZE;
+                }
+                
+                int idx = (int)lut_idx_f;
+                if (idx >= 0 && idx < ERROR_LUT_SIZE) {
+                    sc->p_foc->p_abs_encoder_error_comp_deg[idx] = sc->signal_degree;
+                }
+            }
+            sc->signal_degree += 0.2f;
+            if (sc->signal_degree >= 360.0f) {
+                foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
+                sc->signal_flag = 0;
+                sc->measure_done_flag = 1;
+                
+                // check empty value
+                float *abs_error_comp = sc->p_foc->p_abs_encoder_error_comp_deg;
+                if (abs_error_comp) {
+                    for (int i = 0; i < ERROR_LUT_SIZE; i++) {
+                        if (abs_error_comp[i] == 0) {
+                            int last_i = i - 1;
+                            int next_i = i + 1;
+                            if (last_i < 0) last_i += ERROR_LUT_SIZE;
+                            if (next_i > ERROR_LUT_SIZE) next_i -= ERROR_LUT_SIZE;
+                            abs_error_comp[i] = (abs_error_comp[last_i] + abs_error_comp[next_i]) / 2.0f;
+                        }
+                    }
+                }
+                return;
+            }
+        }
+    }
+
+    float e_rad = DEG_TO_RAD(sc->signal_degree * sc->p_foc->pole_pairs);
+    foc_set_open_loop_voltage(sc->p_foc, vd, vq, e_rad);
+    sc->signal_t++;
+}
+
+void sc_update(self_commissioning_t *sc, float Ts) {
+    if (!sc->signal_flag) return;
+
     switch (sc->seq) {
         case SC_SEQUENCE_START_MEASURE_RS: {
-            vd = sc->signal_offset;
-            sc->v_buffer[idx] = vd;
-            if (idx > 0) {
-                sc->i_buffer[idx - 1] = id;
-            }
+            sc_measure_Rs_update(sc);
             break;
         }
         case SC_SEQUENCE_START_MEASURE_LD: {
-            float rad = sc->signal_omega * (float)sc->signal_t * Ts;
-            vd = sc->signal_amplitude * fast_sin(rad);
-            sc->v_buffer[idx] = vd;
-            if (idx > 0) {
-                sc->i_buffer[idx - 1] = id;
-            }
+            sc_measure_Ld_update(sc, Ts);
             break;
         }
         case SC_SEQUENCE_START_MEASURE_LQ: {
-            float rad = sc->signal_omega * (float)sc->signal_t * Ts;
-            vq = sc->signal_amplitude * fast_sin(rad);
-            vd = 1.0f;
-            sc->v_buffer[idx] = vq;
-            if (idx > 0) {
-                sc->i_buffer[idx - 1] = iq;
-            }
+            sc_measure_Lq_update(sc, Ts);
+            break;
+        }
+        case SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER: {
+            sc_calibrate_abs_encoder_update(sc);
             break;
         }
         default:
             break;
     }
-    foc_set_open_loop_voltage(sc->p_foc, vd, vq, 0);
-    sc->signal_t++;
 }
 
 _Bool sc_is_measure_done(self_commissioning_t *sc) {
