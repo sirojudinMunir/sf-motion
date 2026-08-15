@@ -98,6 +98,7 @@ void foc_reset(foc_t *hfoc) {
 void foc_speed_control_update(foc_t *hfoc, float Ts) {
     hfoc->speed_control_loop_count++;
     if (hfoc->speed_control_loop_count >= SPEED_CONTROL_CYCLE) {
+        hfoc->speed_control_loop_count = 0;
         float error = hfoc->rpm_ref - hfoc->actual_rpm;
         hfoc->Is_ref = pi_control(&hfoc->speed_ctrl, error);
     }
@@ -107,6 +108,7 @@ void foc_speed_control_update(foc_t *hfoc, float Ts) {
 void foc_position_control_update(foc_t *hfoc, float Ts) {
     hfoc->position_control_loop_count++;
     if (hfoc->position_control_loop_count >= POSITION_CONTROL_CYCLE) {
+        hfoc->position_control_loop_count = 0;
         float error = hfoc->pos_ref - hfoc->actual_angle;
         hfoc->rpm_ref = pid_control(&hfoc->pos_ctrl, error);
     }

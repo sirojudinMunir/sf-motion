@@ -269,9 +269,7 @@ static void init_foc(void) {
 
   foc_gear_reducer_init(&hfoc1, 1.0f);
   foc_set_limit_current(&hfoc1, 10.0f);
-
-  hfoc1.v_bus = 12.0f; 
-
+  
   foc_enable(&hfoc1);
 #endif
 }
