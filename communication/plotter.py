@@ -454,11 +454,12 @@ class LivePlotter(QtWidgets.QMainWindow):
             motor_mode = self.motor.get_foc_motor_mode()['mode']
             print(f'motor mode: {motor_mode}')
             if motor_mode == 0:
-                # self.motor.plotter_add_line('Is_ref')
-                # self.motor.plotter_add_line('id')
-                # self.motor.plotter_add_line('iq')
-                self.motor.plotter_add_line('m_angle_rad')
-                self.motor.plotter_add_line('m_angle_rad_comp')
+                self.motor.plotter_add_line('Is_ref')
+                self.motor.plotter_add_line('id')
+                self.motor.plotter_add_line('iq')
+                # self.motor.plotter_add_line('m_angle_rad')
+                # self.motor.plotter_add_line('m_angle_rad_comp')
+                # self.motor.plotter_add_line('v_bus')
             elif motor_mode == 1:
                 self.motor.plotter_add_line('rpm_ref')
                 self.motor.plotter_add_line('actual_rpm')

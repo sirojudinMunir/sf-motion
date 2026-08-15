@@ -206,7 +206,10 @@ int can_send_data(uint8_t *data, uint16_t len) {
 static void init_motor(void) {
   motor_init_pwm(&hfoc1.motor, &TIM1->CCR1, &TIM1->CCR2, &TIM1->CCR3);
   motor_init_adc_current_sense(&hfoc1.motor, &adc_buff[0], &adc_buff[1], &adc_buff[2]);
+  motor_init_adc_power_voltage_sense(&hfoc1.motor, &adc_buff[3]);
   motor_set_current_sense_gain(&hfoc1.motor, (3.3f / 4095.0f) / (0.01f * 20.0f));
+  motor_set_power_voltage_sense_gain(&hfoc1.motor, (3.3f / 4095.0f)*((39.0f + 2.2f) / 2.2f));
+  motor_init_lpf_power_voltage_sense(&hfoc1.motor, 100, BLDC_PWM_FREQ);
 }
 
 static void init_encoder(void) {
@@ -326,9 +329,12 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc->Instance == ADC1) {
-    adc_buff[0] = ADC1->JDR1;
-    adc_buff[1] = ADC1->JDR2;
-    adc_buff[2] = ADC1->JDR3;
+    adc_buff[0] = ADC1->JDR1; // current sense A
+    adc_buff[1] = ADC1->JDR2; // current sense B
+    adc_buff[2] = ADC1->JDR3; // current sense C
+    adc_buff[3] = ADC1->JDR4; // power voltage sense
+    motor_calculate_power_voltage(&hfoc1.motor);
+    motor_get_power_voltage(&hfoc1.motor, &hfoc1.v_bus);
     sc_update(&hsc1, FOC_TS);
     foc_update(&hfoc1, FOC_TS);
   }
@@ -514,8 +520,8 @@ static void MX_ADC1_Init(void)
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_13;
   sConfigInjected.InjectedRank = 1;
-  sConfigInjected.InjectedNbrOfConversion = 3;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_15CYCLES;
+  sConfigInjected.InjectedNbrOfConversion = 4;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_28CYCLES;
   sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONVEDGE_FALLING;
   sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T1_CC4;
   sConfigInjected.AutoInjectedConv = DISABLE;
@@ -539,7 +545,15 @@ static void MX_ADC1_Init(void)
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
   sConfigInjected.InjectedRank = 3;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_6;
+  sConfigInjected.InjectedRank = 4;
   if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
@@ -739,8 +753,8 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -764,8 +778,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(NFAULT1_GPIO_Port, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -786,8 +800,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

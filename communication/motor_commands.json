@@ -593,6 +593,7 @@
         "rpm_ref": 40978,
         "pos_ref": 40979,
         "m_angle_rad": 40980,
-        "m_angle_rad_comp": 40981
+        "m_angle_rad_comp": 40981,
+        "v_bus": 40982
     }
 }

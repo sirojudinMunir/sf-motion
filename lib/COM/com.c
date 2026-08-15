@@ -56,6 +56,7 @@ float plotter_get_value_from_dictionary(com_t *com, uint16_t dictionary_addr) {
     
     case 0xA014: value = com->pfoc->m_angle_rad; break;
     case 0xA015: value = com->pfoc->m_angle_rad_comp; break;
+    case 0xA016: value = com->pfoc->v_bus; break;
   }
   return value;
 }
