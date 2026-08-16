@@ -56,7 +56,7 @@ int sc_start_measure_motor_Lq(self_commissioning_t *sc) {
 
 int sc_start_calibrate_abs_encoder(self_commissioning_t *sc) {
     if (sc->signal_flag) return -1;
-    sc->signal_degree = 0.0f;
+    sc->signal_calibrate_encoder_idx = 0;
     sc->signal_t = 0;
     sc->last_signal_t = 0;
     sc->signal_start_t = 0;
@@ -228,18 +228,19 @@ void sc_measure_Lq_update(self_commissioning_t *sc, float Ts) {
 }
 
 void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
-    float vd = 1.2f;
+    float vd = 1.5f;
     float vq = 0.0f;
     
     float mech_degree = sc->p_foc->get_mech_degre();
 
     if (sc->signal_t < sc->signal_delay_t) {
         sc->abs_encoder_deg_initial = mech_degree;
-        sc->signal_degree = 0.0f;
+        sc->signal_calibrate_encoder_idx = 0;
     }
     else {
-        if (sc->signal_t - sc->last_signal_t >= 100) {
+        if (sc->signal_t - sc->last_signal_t >= 50) {
             sc->last_signal_t = sc->signal_t;
+            float actual_degree = (float)sc->signal_calibrate_encoder_idx / ERROR_LUT_SIZE * 360.0f;
             if (sc->p_foc->p_abs_encoder_error_comp_deg) {
                 float lut_idx_f = (mech_degree / 360.0f) * ERROR_LUT_SIZE;
                 lut_idx_f = fmodf(lut_idx_f, ERROR_LUT_SIZE);
@@ -249,11 +250,11 @@ void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
                 
                 int idx = (int)lut_idx_f;
                 if (idx >= 0 && idx < ERROR_LUT_SIZE) {
-                    sc->p_foc->p_abs_encoder_error_comp_deg[idx] = sc->signal_degree;
+                    sc->p_foc->p_abs_encoder_error_comp_deg[idx] = actual_degree;
                 }
             }
-            sc->signal_degree += 0.2f;
-            if (sc->signal_degree >= 360.0f) {
+            sc->signal_calibrate_encoder_idx++;
+            if (sc->signal_calibrate_encoder_idx >= ERROR_LUT_SIZE) {
                 foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
                 sc->signal_flag = 0;
                 sc->measure_done_flag = 1;
@@ -276,7 +277,7 @@ void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
         }
     }
 
-    float e_rad = DEG_TO_RAD(sc->signal_degree * sc->p_foc->pole_pairs);
+    float e_rad = (float)sc->signal_calibrate_encoder_idx / ERROR_LUT_SIZE * TWO_PI * sc->p_foc->pole_pairs;
     foc_set_open_loop_voltage(sc->p_foc, vd, vq, e_rad);
     sc->signal_t++;
 }

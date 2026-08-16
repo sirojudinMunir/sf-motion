@@ -79,3 +79,38 @@ int link_disable_adc(ADC_HandleTypeDef *hadc) {
   if (HAL_ADCEx_InjectedStop_IT(hadc) != HAL_OK) return -1;
   return 0;
 }
+
+int link_write_flash(void *data, uint32_t len) {
+  HAL_StatusTypeDef status;
+  FLASH_EraseInitTypeDef EraseInitStruct;
+  uint32_t SectorError = 0;
+  
+  HAL_FLASH_Unlock();
+
+  EraseInitStruct.TypeErase    = FLASH_TYPEERASE_SECTORS;
+  EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+  EraseInitStruct.Sector       = FLASH_SECTOR_NUM;
+  EraseInitStruct.NbSectors    = 1;
+
+  status = HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError);
+  if (status != HAL_OK) {
+    HAL_FLASH_Lock();
+    return -1;
+  }
+
+  uint32_t address = FLASH_SECTOR_ADDR;
+  uint8_t *src = (uint8_t *)data;
+
+  for (uint32_t i = 0; i < len; i += 4) {
+    uint32_t word = *(uint32_t*)(src + i);
+    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, word);
+    if (status != HAL_OK) {
+      HAL_FLASH_Lock();
+      return -1;
+    }
+    address += 4;
+  }
+
+  HAL_FLASH_Lock();
+  return 0;
+}

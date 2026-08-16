@@ -24,7 +24,7 @@ typedef struct {
     uint32_t signal_t;
     uint32_t last_signal_t;
     uint32_t signal_start_t;
-    float signal_degree;
+    uint32_t signal_calibrate_encoder_idx;
     float abs_encoder_deg_initial;
     _Bool signal_flag;
     _Bool measure_done_flag;

@@ -131,43 +131,8 @@ void motor1_as5047p_spi_cs(_Bool cs_state) {
   else SPI_CS_GPIO_Port->BSRR = SPI_CS_Pin<<16;
 }
 
-
-#define FLASH_SECTOR_ADDR  ((uint32_t)0x080E0000)
-#define FLASH_SECTOR_NUM   FLASH_SECTOR_11
-
 int write_flash(void *data, uint32_t len) {
-  HAL_StatusTypeDef status;
-  FLASH_EraseInitTypeDef EraseInitStruct;
-  uint32_t SectorError = 0;
-  
-  HAL_FLASH_Unlock();
-
-  EraseInitStruct.TypeErase    = FLASH_TYPEERASE_SECTORS;
-  EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-  EraseInitStruct.Sector       = FLASH_SECTOR_NUM;
-  EraseInitStruct.NbSectors    = 1;
-
-  status = HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError);
-  if (status != HAL_OK) {
-    HAL_FLASH_Lock();
-    return -1;
-  }
-
-  uint32_t address = FLASH_SECTOR_ADDR;
-  uint8_t *src = (uint8_t *)data;
-
-  for (uint32_t i = 0; i < len; i += 4) {
-    uint32_t word = *(uint32_t*)(src + i);
-    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, word);
-    if (status != HAL_OK) {
-      HAL_FLASH_Lock();
-      return -1;
-    }
-    address += 4;
-  }
-
-  HAL_FLASH_Lock();
-  return 0;
+  return link_write_flash(data, len);
 }
 
 int read_flash(void *data, uint32_t len) {
@@ -235,6 +200,7 @@ static void init_foc(void) {
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
   foc_feedback_sensor_init(&hfoc1, motor1_as5047p_get_mech_deg, motor1_as5047p_get_rpm, 
                            hstorage1.memory.encoder_config.error_comp_deg, NORMAL_DIR);
+  foc_speed_feedback_sensor_init(&hfoc1, 500.0f, BLDC_PWM_FREQ);
   com_init(&husb_com, usb_recv_data, usb_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
   com_init(&hcan_com, can_recv_data, can_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
 
@@ -264,7 +230,7 @@ static void init_foc(void) {
 
   foc_motor_init(&hfoc1, hstorage1.memory.motor_config.pole_pairs, 360.0f);
 
-  foc_set_mode(&hfoc1, FOC_MODE_HYBRID);
+  foc_set_mode(&hfoc1, hstorage1.memory.motor_config.foc_mode);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
   foc_gear_reducer_init(&hfoc1, 1.0f);
@@ -622,7 +588,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

@@ -92,7 +92,8 @@ typedef struct {
 
 	float m_angle_rad; // mechanical angle
 	float m_angle_rad_comp;
-	float e_angle_rad_comp; // electrical angle
+	float encoder_e_angle_rad; // electrical angle
+	float encoder_e_omega;
 	float e_rad;
 	float last_e_rad;
 	float e_omega;
@@ -107,7 +108,6 @@ typedef struct {
 	float v_bus;
 	float i_bus;
 
-	float rpm_temp;
 	float actual_rpm;
 	float actual_angle;
 	int32_t m_angle_overflow_count;
@@ -145,6 +145,7 @@ typedef struct {
 
 	SecondOrderLPF id_lpf;
 	SecondOrderLPF iq_lpf;
+	SecondOrderLPF e_omega_lpf;
 
 	//polarity detection
 	p_det_state_t pd_state;
@@ -169,6 +170,7 @@ typedef struct {
 
 void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_motor)(void), uint32_t (*get_pwm_res)(void));
 void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_mech_rpm)(void), float *p_abs_encoder_error_LUT, dir_mode_t sensor_dir);
+void foc_speed_feedback_sensor_init(foc_t *hfoc, float fc, float sampling_freq);
 void foc_motor_init(foc_t *hfoc, uint8_t pole_pairs, float kv);
 void foc_gear_reducer_init(foc_t *hfoc, float ratio);
 void foc_set_limit_current(foc_t *hfoc, float i_limit);
@@ -179,7 +181,6 @@ void open_loop_voltage_control(foc_t *hfoc, float vd_ref, float vq_ref, float an
 void foc_sensorless_init(foc_t *hfoc, float sampling_freq);
 void foc_sensorless_polarity_detection(foc_t *hfoc);
 void foc_current_control_update(foc_t *hfoc, float Ts);
-float foc_get_mech_degree(foc_t *hfoc);
 
 void foc_update(foc_t *hfoc, float Ts);
 void foc_speed_control_update(foc_t *hfoc, float Ts);
