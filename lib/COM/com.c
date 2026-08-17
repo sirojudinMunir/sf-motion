@@ -4,11 +4,10 @@
 
 int8_t com_send_value(com_t *com, void *value, uint16_t size) {
   const uint16_t header = 0xA55A;
-  const uint16_t total_size = size + 2; 
-  uint8_t tx_buff[total_size];
-  memcpy(tx_buff, &header, 2);
-  memcpy(tx_buff + 2, value, size);
-  while (com->send_data(tx_buff, total_size) != 0) ;
+  com->tx_buff_len = size + 2; 
+  memcpy(com->tx_buff, &header, 2);
+  memcpy(com->tx_buff + 2, value, size);
+  com->send_data_flag = 1;
   return 0;
 }
 
@@ -102,16 +101,16 @@ int8_t com_send_plotter_update(com_t *com) {
 
   const uint16_t header = 0xABCD;
   const uint16_t data_size = com->plotter_line_count * sizeof(float);
-  const uint16_t total_size = sizeof(header) + sizeof(uint8_t) + data_size;
-  uint8_t tx_buff[total_size];
+  com->plotter_buff_len = sizeof(header) + sizeof(uint8_t) + data_size;
   uint16_t offset = 0;
-  memcpy(tx_buff + offset, &header, sizeof(header));
+  memcpy(com->plotter_buff + offset, &header, sizeof(header));
   offset += sizeof(header);
-  tx_buff[offset++] = com->plotter_line_count;
-  memcpy(tx_buff + offset, com->plotter_data, data_size);
+  com->plotter_buff[offset++] = com->plotter_line_count;
+  memcpy(com->plotter_buff + offset, com->plotter_data, data_size);
   com->plotter_last_line_count = com->plotter_line_count;
+  com->send_data_plotter_flag = 1;
 
-  return (com->send_data(tx_buff, total_size) == 0) ? 0 : -1;
+  return 0;
 }
 
 /****************************************************************************** */
@@ -626,6 +625,17 @@ void com_update(com_t *com) {
     if (com->get_tick_ms() - com->plotter_tick >= 5) {
       com->plotter_tick = com->get_tick_ms();
       com_send_plotter_update(com);
+    }
+  }
+
+  if (com->send_data_flag) {
+    if (com->send_data(com->tx_buff, com->tx_buff_len) == 0) {
+      com->send_data_flag = 0;
+    }
+  }
+  else if (com->send_data_plotter_flag) {
+    if (com->send_data(com->plotter_buff, com->plotter_buff_len) == 0) {
+      com->send_data_plotter_flag = 0;
     }
   }
 }

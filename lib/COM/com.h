@@ -35,12 +35,18 @@ typedef struct {
     foc_t *pfoc;
     storage_t *pstorage;
     self_commissioning_t *psc;
-    _Bool send_data_pending;
+    _Bool send_data_flag;
+    _Bool send_data_plotter_flag;
+    uint8_t tx_buff[64];
+    uint16_t tx_buff_len;
+    uint8_t plotter_buff[64];
+    uint16_t plotter_buff_len;
     int (*recv_data)(uint8_t*, uint16_t);
     int (*send_data)(uint8_t*, uint16_t);
     uint32_t (*get_tick_ms)(void);
 }com_t;
 
+int8_t com_send_value(com_t *com, void *value, uint16_t size);
 void com_init(com_t *com, int (*recv_data)(uint8_t*, uint16_t), int (*send_data)(uint8_t*, uint16_t), uint32_t (*get_tick_ms)(void),
               foc_t *pfoc, storage_t *pstorage, self_commissioning_t *psc);
 void com_update(com_t *com);

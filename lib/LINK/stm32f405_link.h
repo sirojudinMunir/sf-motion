@@ -14,4 +14,9 @@ int link_enable_adc(ADC_HandleTypeDef *hadc);
 int link_disable_adc(ADC_HandleTypeDef *hadc);
 int link_write_flash(void *data, uint32_t len);
 
+int link_can_init(void);
+int link_can_send_data(uint32_t id, uint8_t *data, uint32_t len);
+int link_can_recv_data(uint32_t *id, uint8_t *data, uint32_t *len);
+_Bool link_can_is_mailboxes_free(void);
+
 #endif // STM32F405_LINK_H

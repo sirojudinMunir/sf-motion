@@ -114,3 +114,65 @@ int link_write_flash(void *data, uint32_t len) {
   HAL_FLASH_Lock();
   return 0;
 }
+
+/******************************************************************************* */
+
+extern CAN_HandleTypeDef hcan1;
+static uint32_t TxMailbox;
+
+// Filter
+static void link_can_filter_config(CAN_HandleTypeDef *hcan) {
+  CAN_FilterTypeDef canfilterconfig;
+
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 0;
+  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilterconfig.FilterIdHigh = 0x0000;
+  canfilterconfig.FilterIdLow = 0x0000;
+  canfilterconfig.FilterMaskIdHigh = 0x0000;
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  canfilterconfig.SlaveStartFilterBank = 14;
+
+  HAL_CAN_ConfigFilter(hcan, &canfilterconfig);
+}
+
+int link_can_init(void) {
+  link_can_filter_config(&hcan1);
+	HAL_CAN_Start(&hcan1);
+	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+  return 0;
+}
+
+int link_can_send_data(uint32_t id, uint8_t *data, uint32_t len) {
+  CAN_TxHeaderTypeDef TxHeader;
+
+  TxHeader.DLC = len;
+  TxHeader.StdId = id;
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.RTR = CAN_RTR_DATA;
+
+  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, data, &TxMailbox) != HAL_OK) {
+    return -1;
+  }
+  return 0;
+}
+
+int link_can_recv_data(uint32_t *id, uint8_t *data, uint32_t *len) {
+  CAN_RxHeaderTypeDef rx_header;
+  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rx_header, data) == HAL_OK) {
+    *id = rx_header.StdId;
+    *len = rx_header.DLC;
+    return 0;
+  }
+  return -1;
+}
+
+_Bool link_can_is_mailboxes_free(void) {
+  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+    return 1;
+  }
+  return 0;
+}
+

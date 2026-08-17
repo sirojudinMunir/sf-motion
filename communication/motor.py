@@ -19,5 +19,7 @@ plotter = LivePlotter(
 plotter.show()
 sys.exit(app.exec_())
 
+m = plotter.motor
+
     
 

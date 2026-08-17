@@ -133,7 +133,7 @@ class DataAcquisitionThread(QtCore.QThread):
         while True:
             if len(self.raw_buffer) < 3:
                 break
-
+            # print(self.raw_buffer.hex(" "))
             header = struct.unpack("<H", self.raw_buffer[:2])[0]
             # LIVE PLOT
             if header == 0xABCD:
