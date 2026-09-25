@@ -3,7 +3,7 @@
 
 // 0 -> normal mode
 // 1 -> USB to CAN converter mode
-#define USB_TO_CAN  (1)
+#define USB_TO_CAN  (0)
 
 #define USB_TO_CAN_DEVICE_ID 0x00
 
