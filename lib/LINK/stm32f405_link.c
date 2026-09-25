@@ -1,4 +1,5 @@
 #include "stm32f405_link.h"
+#include <string.h>
 
 // low level implementation on stm32f405rgt6
 
@@ -119,18 +120,29 @@ int link_write_flash(void *data, uint32_t len) {
 
 extern CAN_HandleTypeDef hcan1;
 static uint32_t TxMailbox;
+uint8_t can_rx_data[8];
 
 // Filter
-static void link_can_filter_config(CAN_HandleTypeDef *hcan) {
+static void link_can_filter_config(CAN_HandleTypeDef *hcan, uint32_t id) {
   CAN_FilterTypeDef canfilterconfig;
 
   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
   canfilterconfig.FilterBank = 0;
   canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  canfilterconfig.FilterIdHigh = 0x0000;
+  
+  // Standard ID (11-bit)
+  canfilterconfig.FilterIdHigh = (id << 5) & 0xFFFF;
   canfilterconfig.FilterIdLow = 0x0000;
+  
+#if USB_TO_CAN
   canfilterconfig.FilterMaskIdHigh = 0x0000;
   canfilterconfig.FilterMaskIdLow = 0x0000;
+#else
+  // Mask: 0xFFFF (exact match)
+  canfilterconfig.FilterMaskIdHigh = 0x00FF;
+  canfilterconfig.FilterMaskIdLow = 0x00FF;
+#endif
+  
   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
   canfilterconfig.SlaveStartFilterBank = 14;
@@ -138,8 +150,8 @@ static void link_can_filter_config(CAN_HandleTypeDef *hcan) {
   HAL_CAN_ConfigFilter(hcan, &canfilterconfig);
 }
 
-int link_can_init(void) {
-  link_can_filter_config(&hcan1);
+int link_can_init(uint32_t id) {
+  link_can_filter_config(&hcan1, id);
 	HAL_CAN_Start(&hcan1);
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
   return 0;
@@ -161,9 +173,12 @@ int link_can_send_data(uint32_t id, uint8_t *data, uint32_t len) {
 
 int link_can_recv_data(uint32_t *id, uint8_t *data, uint32_t *len) {
   CAN_RxHeaderTypeDef rx_header;
-  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rx_header, data) == HAL_OK) {
+  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rx_header, can_rx_data) == HAL_OK) {
     *id = rx_header.StdId;
     *len = rx_header.DLC;
+    data[0] = (rx_header.StdId >> 8) & 0x07;
+    data[1] = rx_header.StdId & 0xff;
+    memcpy(data + 2, can_rx_data, rx_header.DLC);
     return 0;
   }
   return -1;

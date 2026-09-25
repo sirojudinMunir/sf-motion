@@ -5,7 +5,6 @@ import json
 import numpy as np
 from enum import IntEnum
 
-
 class SFMComType(IntEnum):
     RESPONSE = 0x00
     READ = 0x01
@@ -19,9 +18,10 @@ class SFMComType(IntEnum):
 class SFMotion:
     HEADER = b"\xA5\xA5"
 
-    def __init__(self, serial_conn=None, acq_thread=None, json_path="SFMotionRegisters.json"):
+    def __init__(self, serial_conn=None, acq_thread=None, node_id=1, json_path="SFMotionRegisters.json"):
         self.ser = serial_conn
         self.acq_thread = acq_thread
+        self.node_id = node_id
 
         with open(json_path, "r") as f:
             config = json.load(f)
@@ -61,9 +61,9 @@ class SFMotion:
     # ------------------------------------------------------------
 
     def _send_frame(self, com_type, address, data=b""):
-        payload = bytes([com_type, address]) + data
+        payload = bytes([com_type, self.node_id, address]) + data
         frame = (self.HEADER + bytes([len(payload)]) + payload)
-        # print(f"TX: {frame.hex(' ')}")
+        print(f"TX: {frame.hex(' ')}")
         self.ser.write(frame)
 
     def read(self, address):
@@ -77,7 +77,11 @@ class SFMotion:
             raise ValueError(f"Address {address} ({register['name']}) has no data format")
         size = struct.calcsize(fmt)
         self._send_frame(SFMComType.READ, address)
-        response_address, data = (self.acq_thread.response_queue.get(timeout=2))
+        response_node_id, response_address, data = (
+            self.acq_thread.response_queue.get(timeout=2)
+        )
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
         if response_address != address:
             raise RuntimeError(f"Unexpected address: {response_address}")
         if len(data) != size:
@@ -96,9 +100,11 @@ class SFMotion:
         else:
             data = struct.pack(fmt, value)
         self._send_frame(SFMComType.WRITE, address, data,)
-        response_address, response_data = (
+        response_node_id, response_address, response_data = (
             self.acq_thread.response_queue.get(timeout=2)
         )
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
         if response_address != address:
             raise RuntimeError(f"Unexpected address: {response_address}")
         if len(response_data) != 1:
@@ -114,7 +120,9 @@ class SFMotion:
 
     def enable_streaming(self, address):
         self._send_frame(SFMComType.ENABLE_STREAMING, address,)
-        response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
+        response_node_id, response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
         if response_address != address:
             raise RuntimeError(f"Unexpected address: {response_address}")
         status = struct.unpack("<b", response_data)[0]
@@ -123,7 +131,9 @@ class SFMotion:
 
     def disable_streaming(self, address):
         self._send_frame(SFMComType.DISABLE_STREAMING, address,)
-        response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
+        response_node_id, response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
         if response_address != address:
             raise RuntimeError(f"Unexpected address: {response_address}")
         status = struct.unpack("<b", response_data)[0]
@@ -131,7 +141,18 @@ class SFMotion:
             raise RuntimeError(f"Device returned error: {status}")
 
     # ----------------------------------------------------------------------------------
-
+    
+    def get_version(self):
+        address = 1
+        self._send_frame(SFMComType.READ, address)
+        response_node_id, response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
+        if response_address != address:
+            raise RuntimeError(f"Unexpected address: {response_address}")
+        major, minor, patch = struct.unpack("<3B", response_data)
+        return major, minor, patch
+    
     def self_commissioning(self):
         self.set_start_measure_resistance()
         time.sleep(1)

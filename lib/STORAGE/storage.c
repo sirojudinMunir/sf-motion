@@ -28,6 +28,7 @@ int storage_read_config(storage_t *s) {
 }
 
 void storage_default_config(storage_t *s) {
+    s->memory.general.device_id = 0;
     s->memory.motor_config.foc_mode = FOC_MODE_SENSORED;
     s->memory.motor_config.motor_mode = MOTOR_MODE_DISABLE;
     s->memory.motor_config.pole_pairs = 7;
@@ -78,6 +79,7 @@ void storage_default_config(storage_t *s) {
 }
 
 void storage_copy_to_local(storage_t *s, foc_t *hfoc) {
+    hfoc->motor.device_id = s->memory.general.device_id;
     hfoc->foc_mode = s->memory.motor_config.foc_mode;
     hfoc->motor_mode = s->memory.motor_config.motor_mode;
     hfoc->pole_pairs = s->memory.motor_config.pole_pairs;

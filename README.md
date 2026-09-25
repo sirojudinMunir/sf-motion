@@ -165,11 +165,11 @@ After uploading the firmware, follow these steps:
     Automatic motor direction detection will be implemented in a future version.
 9. Save configuration
     ``` python
-    motor.save_config()
+    motor.set_save_config()
     ```
 10. Test the FOC motor modes using:
     ``` python
-    motor.set_foc_motor_mode(<mode>)
+    motor.set_motor_mode(<mode>)
     ```
     Available modes:
 

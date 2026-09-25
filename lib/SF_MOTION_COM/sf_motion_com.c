@@ -15,37 +15,42 @@ static int8_t name(sfm_com_t *com, void *data) { \
 
 int8_t sfm_com_send_data(sfm_com_t *com, sfm_com_type_t com_type, uint8_t address, void *data, uint16_t size_of_data) {
   if (com->send_data_flag) return -1;
-  com->data_tx_len = size_of_data + 2; // (size_of_data + com_type + address)
-  memcpy(com->data_tx, &com_type, 1);
-  memcpy(com->data_tx + 1, &address, 1);
-  memcpy(com->data_tx + 2, data, size_of_data);
+  com->data_tx_len = size_of_data + SFM_COM_HEADER_LENGTH;
+  com->data_tx[SFM_COM_COMTYPE_INDEX] = (uint8_t)com_type;
+  com->data_tx[SFM_COM_DEVICE_ID_INDEX] = (uint8_t)(com->pfoc->motor.device_id & 0xff);
+  com->data_tx[SFM_COM_ADDRESS_INDEX] = address;
+  memcpy(com->data_tx + SFM_COM_DATA_OFFSET, data, size_of_data);
   com->send_data_flag = 1;
   return 0;
 }
 
-int8_t sfm_com_send_data_plotter(sfm_plotter_t *plotter, void *data, uint16_t size_of_data) {
+int8_t sfm_com_send_data_plotter(sfm_com_t *com, sfm_plotter_t *plotter, void *data, uint16_t size_of_data) {
   if (plotter->send_flag) return -1;
-  uint8_t com_type = (uint8_t)SFM_COM_TYPE_STREAMING;
-  plotter->data_len = size_of_data + 2; // (size_of_data + com_type + address)
-  memcpy(plotter->data, &com_type, 1);
-  memcpy(plotter->data + 1, &plotter->addr, 1);
-  memcpy(plotter->data + 2, data, size_of_data);
+  plotter->data_len = size_of_data + SFM_COM_HEADER_LENGTH;
+  plotter->data[SFM_COM_COMTYPE_INDEX] = (uint8_t)SFM_COM_TYPE_STREAMING;
+  plotter->data[SFM_COM_DEVICE_ID_INDEX] = (uint8_t)(com->pfoc->motor.device_id & 0xff);
+  plotter->data[SFM_COM_ADDRESS_INDEX] = plotter->addr;
+  memcpy(plotter->data + SFM_COM_DATA_OFFSET, data, size_of_data);
   plotter->send_flag = 1;
   return 0;
 }
 
 sfm_com_type_t sfm_com_get_com_type(sfm_com_t *com) {
-  return com->data_rx[0];
+  return com->data_rx[SFM_COM_COMTYPE_INDEX];
+}
+
+uint8_t sfm_com_get_id(sfm_com_t *com) {
+  return com->data_rx[SFM_COM_DEVICE_ID_INDEX];
 }
 
 uint8_t sfm_com_get_address(sfm_com_t *com) {
-  return com->data_rx[1];
+  return com->data_rx[SFM_COM_ADDRESS_INDEX];
 }
 
 int8_t sfm_com_recv_data(sfm_com_t *com, void *data, uint16_t size_of_data) {
   int8_t ret_val = -1;
-  if (com->data_rx_len == size_of_data + 2) {
-    memcpy(data, &com->data_rx[2], size_of_data);
+  if (com->data_rx_len == size_of_data + SFM_COM_HEADER_LENGTH) {
+    memcpy(data, &com->data_rx[SFM_COM_DATA_OFFSET], size_of_data);
     ret_val = 0;
   }
   return ret_val;
@@ -131,6 +136,19 @@ int8_t sfm_com_handle_parameter(
 }
 
 /************************************************************************************************ */
+
+static int8_t get_version(sfm_com_t *com, void *data) {
+  uint8_t version[3] = {
+    SF_MOTION_MAJOR_VERSION,
+    SF_MOTION_MINOR_VERSION,
+    SF_MOTION_PATCH_VERSION,
+  };
+  memcpy(data, version, sizeof(version));
+  return 0;
+}
+
+SFM_GETTER(get_device_id, *(uint8_t *)data = (uint8_t)com->pstorage->memory.general.device_id)
+SFM_SETTER(set_device_id, com->pstorage->memory.general.device_id = (uint32_t)*(uint8_t *)data)
 
 static int8_t set_default_config(sfm_com_t *com, void *data) {
   (void) data;
@@ -319,70 +337,76 @@ typedef struct {
 
 sfm_com_register_handler_t sfm_com_reg[] = {
   {NULL, NULL, SFM_COM_STREAM_DIS, 0},                                                      // 0
-  {NULL, set_default_config, SFM_COM_STREAM_DIS, 0},                                        // 1
-  {NULL, set_save_config, SFM_COM_STREAM_DIS, 0},                                           // 2
-  {NULL, set_start_measure_resistance, SFM_COM_STREAM_DIS, 0},                              // 3
-  {NULL, set_start_measure_ld, SFM_COM_STREAM_DIS, 0},                                      // 4
-  {NULL, set_start_measure_lq, SFM_COM_STREAM_DIS, 0},                                      // 5
-  {NULL, set_start_calibrate_abs_encoder, SFM_COM_STREAM_DIS, 0},                           // 6
+  {get_version, NULL, SFM_COM_STREAM_DIS, 3},                                               // 1
+  {get_device_id, set_device_id, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                      // 2
+  {NULL, NULL, SFM_COM_STREAM_DIS, 0},                                                      // 3
+  {NULL, NULL, SFM_COM_STREAM_DIS, 0},                                                      // 4
+  {NULL, NULL, SFM_COM_STREAM_DIS, 0},                                                      // 5
+  {NULL, NULL, SFM_COM_STREAM_DIS, 0},                                                      // 6
+  {NULL, set_default_config, SFM_COM_STREAM_DIS, 0},                                        // 7
+  {NULL, set_save_config, SFM_COM_STREAM_DIS, 0},                                           // 8
+  {NULL, set_start_measure_resistance, SFM_COM_STREAM_DIS, 0},                              // 9
+  {NULL, set_start_measure_ld, SFM_COM_STREAM_DIS, 0},                                      // 10
+  {NULL, set_start_measure_lq, SFM_COM_STREAM_DIS, 0},                                      // 11
+  {NULL, set_start_calibrate_abs_encoder, SFM_COM_STREAM_DIS, 0},                           // 12
   
-  {get_foc_mode, set_foc_mode, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                        // 7
-  {get_motor_mode, set_motor_mode, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                    // 8
-  {get_pole_pairs, set_pole_pairs, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                    // 9
-  {get_kv, set_kv, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 10
-  {get_Rs, set_Rs, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 11
-  {get_Ld, set_Ld, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 12
-  {get_Lq, set_Lq, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 13
-  {get_flux_linkage, set_flux_linkage, SFM_COM_STREAM_DIS, sizeof(float)},                  // 14
+  {get_foc_mode, set_foc_mode, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                        // 13
+  {get_motor_mode, set_motor_mode, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                    // 14
+  {get_pole_pairs, set_pole_pairs, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                    // 15
+  {get_kv, set_kv, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 16
+  {get_Rs, set_Rs, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 17
+  {get_Ld, set_Ld, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 18
+  {get_Lq, set_Lq, SFM_COM_STREAM_DIS, sizeof(float)},                                      // 19
+  {get_flux_linkage, set_flux_linkage, SFM_COM_STREAM_DIS, sizeof(float)},                  // 20
        
-  {get_id_kp, set_id_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 15
-  {get_id_ki, set_id_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 16
-  {get_id_deadband, set_id_deadband, SFM_COM_STREAM_DIS, sizeof(float)},                    // 17
-  {get_iq_kp, set_iq_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 18
-  {get_iq_ki, set_iq_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 19
-  {get_iq_deadband, set_iq_deadband, SFM_COM_STREAM_DIS, sizeof(float)},                    // 20
-  {get_speed_kp, set_speed_kp, SFM_COM_STREAM_DIS, sizeof(float)},                          // 21
-  {get_speed_ki, set_speed_ki, SFM_COM_STREAM_DIS, sizeof(float)},                          // 22
-  {get_speed_out_max, set_speed_out_max, SFM_COM_STREAM_DIS, sizeof(float)},                // 23
-  {get_speed_deadband, set_speed_deadband, SFM_COM_STREAM_DIS, sizeof(float)},              // 24
-  {get_position_kp, set_position_kp, SFM_COM_STREAM_DIS, sizeof(float)},                    // 25
-  {get_position_ki, set_position_ki, SFM_COM_STREAM_DIS, sizeof(float)},                    // 26
-  {get_position_kd, set_position_kd, SFM_COM_STREAM_DIS, sizeof(float)},                    // 27
-  {get_position_out_max, set_position_out_max, SFM_COM_STREAM_DIS, sizeof(float)},          // 28
-  {get_position_deadband, set_position_deadband, SFM_COM_STREAM_DIS, sizeof(float)},        // 29
-  {get_position_d_filter_fc, set_position_d_filter_fc, SFM_COM_STREAM_DIS, sizeof(float)},  // 30
-  {get_fw_kp, set_fw_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 31
-  {get_fw_ki, set_fw_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 32
-  {get_fw_out_min, set_fw_out_min, SFM_COM_STREAM_DIS, sizeof(float)},                      // 33
-  {get_fw_enable, set_fw_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                      // 34
-  {get_mtpa_enable, set_mtpa_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                  // 35
+  {get_id_kp, set_id_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 21
+  {get_id_ki, set_id_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 22
+  {get_id_deadband, set_id_deadband, SFM_COM_STREAM_DIS, sizeof(float)},                    // 23
+  {get_iq_kp, set_iq_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 24
+  {get_iq_ki, set_iq_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 25
+  {get_iq_deadband, set_iq_deadband, SFM_COM_STREAM_DIS, sizeof(float)},                    // 26
+  {get_speed_kp, set_speed_kp, SFM_COM_STREAM_DIS, sizeof(float)},                          // 27
+  {get_speed_ki, set_speed_ki, SFM_COM_STREAM_DIS, sizeof(float)},                          // 28
+  {get_speed_out_max, set_speed_out_max, SFM_COM_STREAM_DIS, sizeof(float)},                // 29
+  {get_speed_deadband, set_speed_deadband, SFM_COM_STREAM_DIS, sizeof(float)},              // 30
+  {get_position_kp, set_position_kp, SFM_COM_STREAM_DIS, sizeof(float)},                    // 31
+  {get_position_ki, set_position_ki, SFM_COM_STREAM_DIS, sizeof(float)},                    // 32
+  {get_position_kd, set_position_kd, SFM_COM_STREAM_DIS, sizeof(float)},                    // 33
+  {get_position_out_max, set_position_out_max, SFM_COM_STREAM_DIS, sizeof(float)},          // 34
+  {get_position_deadband, set_position_deadband, SFM_COM_STREAM_DIS, sizeof(float)},        // 35
+  {get_position_d_filter_fc, set_position_d_filter_fc, SFM_COM_STREAM_DIS, sizeof(float)},  // 36
+  {get_fw_kp, set_fw_kp, SFM_COM_STREAM_DIS, sizeof(float)},                                // 37
+  {get_fw_ki, set_fw_ki, SFM_COM_STREAM_DIS, sizeof(float)},                                // 38
+  {get_fw_out_min, set_fw_out_min, SFM_COM_STREAM_DIS, sizeof(float)},                      // 39
+  {get_fw_enable, set_fw_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                      // 40
+  {get_mtpa_enable, set_mtpa_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                  // 41
 
-  {get_current_set_point, set_current_set_point, SFM_COM_STREAM_ENA, sizeof(float)},        // 36
-  {get_speed_set_point, set_speed_set_point, SFM_COM_STREAM_ENA, sizeof(float)},            // 37
-  {get_position_set_point, set_position_set_point, SFM_COM_STREAM_ENA, sizeof(float)},      // 38
-  {get_ia, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 39
-  {get_ib, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 40
-  {get_ic, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 41
-  {get_i_alpha, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 42
-  {get_i_beta, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 43
-  {get_id, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 44
-  {get_iq, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 45
-  {get_va, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 46
-  {get_vb, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 47
-  {get_vc, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 48
-  {get_v_alpha, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 49
-  {get_v_beta, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 50
-  {get_vd, set_vd, SFM_COM_STREAM_ENA, sizeof(float)},                                      // 51
-  {get_vq, set_vq, SFM_COM_STREAM_ENA, sizeof(float)},                                      // 52
-  {get_e_rad, set_e_rad, SFM_COM_STREAM_ENA, sizeof(float)},                                // 53
-  {get_actual_rpm, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                // 54
-  {get_actual_angle, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                              // 55
-  {get_Is_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 56
-  {get_rpm_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 57
-  {get_pos_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 58
-  {get_m_angle_rad, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                               // 59
-  {get_m_angle_rad_comp, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                          // 60
-  {get_v_bus, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                     // 61
+  {get_current_set_point, set_current_set_point, SFM_COM_STREAM_ENA, sizeof(float)},        // 42
+  {get_speed_set_point, set_speed_set_point, SFM_COM_STREAM_ENA, sizeof(float)},            // 43
+  {get_position_set_point, set_position_set_point, SFM_COM_STREAM_ENA, sizeof(float)},      // 44
+  {get_ia, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 45
+  {get_ib, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 46
+  {get_ic, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 47
+  {get_i_alpha, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 48
+  {get_i_beta, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 49
+  {get_id, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 50
+  {get_iq, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 51
+  {get_va, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 52
+  {get_vb, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 53
+  {get_vc, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                        // 54
+  {get_v_alpha, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 55
+  {get_v_beta, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 56
+  {get_vd, set_vd, SFM_COM_STREAM_ENA, sizeof(float)},                                      // 57
+  {get_vq, set_vq, SFM_COM_STREAM_ENA, sizeof(float)},                                      // 58
+  {get_e_rad, set_e_rad, SFM_COM_STREAM_ENA, sizeof(float)},                                // 59
+  {get_actual_rpm, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                // 60
+  {get_actual_angle, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                              // 61
+  {get_Is_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                    // 62
+  {get_rpm_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 63
+  {get_pos_ref, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                   // 64
+  {get_m_angle_rad, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                               // 65
+  {get_m_angle_rad_comp, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                          // 66
+  {get_v_bus, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                     // 67
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);
@@ -429,7 +453,7 @@ void sfm_com_update(sfm_com_t *com) {
         if (plotter_addr > 0) {
           float value;
           sfm_com_reg[plotter_addr].com_read(com, &value);
-          sfm_com_send_data_plotter(&com->plotter[i], &value, sizeof(value));
+          sfm_com_send_data_plotter(com, &com->plotter[i], &value, sizeof(value));
         }
       }
     }

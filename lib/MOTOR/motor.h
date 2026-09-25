@@ -7,6 +7,7 @@
 #include "lpf.h"
 
 typedef struct {
+  uint32_t device_id;
   volatile uint32_t *p_pwm_va;
   volatile uint32_t *p_pwm_vb;
   volatile uint32_t *p_pwm_vc;

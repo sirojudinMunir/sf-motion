@@ -1,7 +1,6 @@
 #ifndef SF_MOTION_COM_H
 #define SF_MOTION_COM_H
 
-#define USB_TO_CAN  (0)
 
 #include <stdint.h>
 #include "string.h"
@@ -10,6 +9,12 @@
 #include "FOC_utils.h"
 #include "self_commissioning.h"
 #include "storage.h"
+
+#define SFM_COM_COMTYPE_INDEX    0
+#define SFM_COM_DEVICE_ID_INDEX  1
+#define SFM_COM_ADDRESS_INDEX    2
+#define SFM_COM_HEADER_LENGTH    3 // (com_type(1-byte) + device_id(1-byte) + address(1-byte))
+#define SFM_COM_DATA_OFFSET      SFM_COM_HEADER_LENGTH
 
 
 #define MAX_PLOTTER_LINE 10
@@ -31,7 +36,7 @@ typedef enum {
 
 typedef struct {
   uint8_t addr;
-  uint8_t data[1+1+4];
+  uint8_t data[8];
   uint16_t data_len;
   _Bool send_flag;
 }sfm_plotter_t;

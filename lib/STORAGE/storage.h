@@ -1,11 +1,15 @@
 #ifndef STORAGE_H_
 #define STORAGE_H_
 
+#include "device_config.h"
 #include "FOC_utils.h"
-
 
 #define SOF_FLAG 0xAA
 #define EOF_FLAG 0x55
+
+typedef struct {
+    uint32_t device_id;
+}storage_general_t;
 
 typedef struct {
 	foc_mode_t foc_mode;
@@ -70,6 +74,7 @@ typedef struct {
 typedef struct {
     uint8_t valid_SOF;
 
+    storage_general_t general;
     storage_motor_config_t motor_config;
     storage_current_control_t id_control;
     storage_current_control_t iq_control;

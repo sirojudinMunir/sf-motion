@@ -1,15 +1,15 @@
 {
   "registers": [
     {
-      "address": 0,
-      "name": "invalid",
-      "format": null,
-      "read": false,
-      "write": false,
+      "address": 2,
+      "name": "device_id",
+      "format": "<B",
+      "read": true,
+      "write": true,
       "streaming": false
     },
     {
-      "address": 1,
+      "address": 7,
       "name": "default_config",
       "format": null,
       "read": false,
@@ -17,7 +17,7 @@
       "streaming": false
     },
     {
-      "address": 2,
+      "address": 8,
       "name": "save_config",
       "format": null,
       "read": false,
@@ -25,7 +25,7 @@
       "streaming": false
     },
     {
-      "address": 3,
+      "address": 9,
       "name": "start_measure_resistance",
       "format": null,
       "read": false,
@@ -33,7 +33,7 @@
       "streaming": false
     },
     {
-      "address": 4,
+      "address": 10,
       "name": "start_measure_ld",
       "format": null,
       "read": false,
@@ -41,7 +41,7 @@
       "streaming": false
     },
     {
-      "address": 5,
+      "address": 11,
       "name": "start_measure_lq",
       "format": null,
       "read": false,
@@ -49,7 +49,7 @@
       "streaming": false
     },
     {
-      "address": 6,
+      "address": 12,
       "name": "start_calibrate_abs_encoder",
       "format": null,
       "read": false,
@@ -58,7 +58,7 @@
     },
 
     {
-      "address": 7,
+      "address": 13,
       "name": "foc_mode",
       "format": "<B",
       "read": true,
@@ -66,7 +66,7 @@
       "streaming": false
     },
     {
-      "address": 8,
+      "address": 14,
       "name": "motor_mode",
       "format": "<B",
       "read": true,
@@ -74,7 +74,7 @@
       "streaming": false
     },
     {
-      "address": 9,
+      "address": 15,
       "name": "pole_pairs",
       "format": "<B",
       "read": true,
@@ -82,7 +82,7 @@
       "streaming": false
     },
     {
-      "address": 10,
+      "address": 16,
       "name": "kv",
       "format": "<f",
       "read": true,
@@ -90,7 +90,7 @@
       "streaming": false
     },
     {
-      "address": 11,
+      "address": 17,
       "name": "rs",
       "format": "<f",
       "read": true,
@@ -98,7 +98,7 @@
       "streaming": false
     },
     {
-      "address": 12,
+      "address": 18,
       "name": "ld",
       "format": "<f",
       "read": true,
@@ -106,7 +106,7 @@
       "streaming": false
     },
     {
-      "address": 13,
+      "address": 19,
       "name": "lq",
       "format": "<f",
       "read": true,
@@ -114,7 +114,7 @@
       "streaming": false
     },
     {
-      "address": 14,
+      "address": 20,
       "name": "flux_linkage",
       "format": "<f",
       "read": true,
@@ -123,7 +123,7 @@
     },
 
     {
-      "address": 15,
+      "address": 21,
       "name": "id_kp",
       "format": "<f",
       "read": true,
@@ -131,7 +131,7 @@
       "streaming": false
     },
     {
-      "address": 16,
+      "address": 22,
       "name": "id_ki",
       "format": "<f",
       "read": true,
@@ -139,58 +139,8 @@
       "streaming": false
     },
     {
-      "address": 17,
-      "name": "id_deadband",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-
-    {
-      "address": 18,
-      "name": "iq_kp",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-    {
-      "address": 19,
-      "name": "iq_ki",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-    {
-      "address": 20,
-      "name": "iq_deadband",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-
-    {
-      "address": 21,
-      "name": "speed_kp",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-    {
-      "address": 22,
-      "name": "speed_ki",
-      "format": "<f",
-      "read": true,
-      "write": true,
-      "streaming": false
-    },
-    {
       "address": 23,
-      "name": "speed_out_max",
+      "name": "id_deadband",
       "format": "<f",
       "read": true,
       "write": true,
@@ -198,16 +148,15 @@
     },
     {
       "address": 24,
-      "name": "speed_deadband",
+      "name": "iq_kp",
       "format": "<f",
       "read": true,
       "write": true,
       "streaming": false
     },
-
     {
       "address": 25,
-      "name": "position_kp",
+      "name": "iq_ki",
       "format": "<f",
       "read": true,
       "write": true,
@@ -215,7 +164,7 @@
     },
     {
       "address": 26,
-      "name": "position_ki",
+      "name": "iq_deadband",
       "format": "<f",
       "read": true,
       "write": true,
@@ -223,7 +172,7 @@
     },
     {
       "address": 27,
-      "name": "position_kd",
+      "name": "speed_kp",
       "format": "<f",
       "read": true,
       "write": true,
@@ -231,7 +180,7 @@
     },
     {
       "address": 28,
-      "name": "position_out_max",
+      "name": "speed_ki",
       "format": "<f",
       "read": true,
       "write": true,
@@ -239,7 +188,7 @@
     },
     {
       "address": 29,
-      "name": "position_deadband",
+      "name": "speed_out_max",
       "format": "<f",
       "read": true,
       "write": true,
@@ -247,16 +196,15 @@
     },
     {
       "address": 30,
-      "name": "position_d_filter_fc",
+      "name": "speed_deadband",
       "format": "<f",
       "read": true,
       "write": true,
       "streaming": false
     },
-
     {
       "address": 31,
-      "name": "fw_kp",
+      "name": "position_kp",
       "format": "<f",
       "read": true,
       "write": true,
@@ -264,7 +212,7 @@
     },
     {
       "address": 32,
-      "name": "fw_ki",
+      "name": "position_ki",
       "format": "<f",
       "read": true,
       "write": true,
@@ -272,7 +220,7 @@
     },
     {
       "address": 33,
-      "name": "fw_out_min",
+      "name": "position_kd",
       "format": "<f",
       "read": true,
       "write": true,
@@ -280,6 +228,54 @@
     },
     {
       "address": 34,
+      "name": "position_out_max",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 35,
+      "name": "position_deadband",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 36,
+      "name": "position_d_filter_fc",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 37,
+      "name": "fw_kp",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 38,
+      "name": "fw_ki",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 39,
+      "name": "fw_out_min",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 40,
       "name": "fw_enable",
       "format": "<B",
       "read": true,
@@ -287,7 +283,7 @@
       "streaming": false
     },
     {
-      "address": 35,
+      "address": 41,
       "name": "mtpa_enable",
       "format": "<B",
       "read": true,
@@ -296,7 +292,7 @@
     },
 
     {
-      "address": 36,
+      "address": 42,
       "name": "current_set_point",
       "format": "<f",
       "read": true,
@@ -304,7 +300,7 @@
       "streaming": true
     },
     {
-      "address": 37,
+      "address": 43,
       "name": "speed_set_point",
       "format": "<f",
       "read": true,
@@ -312,16 +308,15 @@
       "streaming": true
     },
     {
-      "address": 38,
+      "address": 44,
       "name": "position_set_point",
       "format": "<f",
       "read": true,
       "write": true,
       "streaming": true
     },
-
     {
-      "address": 39,
+      "address": 45,
       "name": "ia",
       "format": "<f",
       "read": true,
@@ -329,7 +324,7 @@
       "streaming": true
     },
     {
-      "address": 40,
+      "address": 46,
       "name": "ib",
       "format": "<f",
       "read": true,
@@ -337,7 +332,7 @@
       "streaming": true
     },
     {
-      "address": 41,
+      "address": 47,
       "name": "ic",
       "format": "<f",
       "read": true,
@@ -345,7 +340,7 @@
       "streaming": true
     },
     {
-      "address": 42,
+      "address": 48,
       "name": "i_alpha",
       "format": "<f",
       "read": true,
@@ -353,7 +348,7 @@
       "streaming": true
     },
     {
-      "address": 43,
+      "address": 49,
       "name": "i_beta",
       "format": "<f",
       "read": true,
@@ -361,7 +356,7 @@
       "streaming": true
     },
     {
-      "address": 44,
+      "address": 50,
       "name": "id",
       "format": "<f",
       "read": true,
@@ -369,16 +364,15 @@
       "streaming": true
     },
     {
-      "address": 45,
+      "address": 51,
       "name": "iq",
       "format": "<f",
       "read": true,
       "write": false,
       "streaming": true
     },
-
     {
-      "address": 46,
+      "address": 52,
       "name": "va",
       "format": "<f",
       "read": true,
@@ -386,7 +380,7 @@
       "streaming": true
     },
     {
-      "address": 47,
+      "address": 53,
       "name": "vb",
       "format": "<f",
       "read": true,
@@ -394,7 +388,7 @@
       "streaming": true
     },
     {
-      "address": 48,
+      "address": 54,
       "name": "vc",
       "format": "<f",
       "read": true,
@@ -402,7 +396,7 @@
       "streaming": true
     },
     {
-      "address": 49,
+      "address": 55,
       "name": "v_alpha",
       "format": "<f",
       "read": true,
@@ -410,7 +404,7 @@
       "streaming": true
     },
     {
-      "address": 50,
+      "address": 56,
       "name": "v_beta",
       "format": "<f",
       "read": true,
@@ -418,7 +412,7 @@
       "streaming": true
     },
     {
-      "address": 51,
+      "address": 57,
       "name": "vd",
       "format": "<f",
       "read": true,
@@ -426,7 +420,7 @@
       "streaming": true
     },
     {
-      "address": 52,
+      "address": 58,
       "name": "vq",
       "format": "<f",
       "read": true,
@@ -434,16 +428,15 @@
       "streaming": true
     },
     {
-      "address": 53,
+      "address": 59,
       "name": "e_rad",
       "format": "<f",
       "read": true,
       "write": true,
       "streaming": true
     },
-
     {
-      "address": 54,
+      "address": 60,
       "name": "actual_rpm",
       "format": "<f",
       "read": true,
@@ -451,7 +444,7 @@
       "streaming": true
     },
     {
-      "address": 55,
+      "address": 61,
       "name": "actual_angle",
       "format": "<f",
       "read": true,
@@ -459,7 +452,7 @@
       "streaming": true
     },
     {
-      "address": 56,
+      "address": 62,
       "name": "is_ref",
       "format": "<f",
       "read": true,
@@ -467,7 +460,7 @@
       "streaming": true
     },
     {
-      "address": 57,
+      "address": 63,
       "name": "rpm_ref",
       "format": "<f",
       "read": true,
@@ -475,7 +468,7 @@
       "streaming": true
     },
     {
-      "address": 58,
+      "address": 64,
       "name": "pos_ref",
       "format": "<f",
       "read": true,
@@ -483,7 +476,7 @@
       "streaming": true
     },
     {
-      "address": 59,
+      "address": 65,
       "name": "m_angle_rad",
       "format": "<f",
       "read": true,
@@ -491,7 +484,7 @@
       "streaming": true
     },
     {
-      "address": 60,
+      "address": 66,
       "name": "m_angle_rad_comp",
       "format": "<f",
       "read": true,
@@ -499,7 +492,7 @@
       "streaming": true
     },
     {
-      "address": 61,
+      "address": 67,
       "name": "v_bus",
       "format": "<f",
       "read": true,
