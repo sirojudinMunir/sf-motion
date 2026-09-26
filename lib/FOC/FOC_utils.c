@@ -153,8 +153,8 @@ void foc_sensored_calc_electric_angle(foc_t *hfoc) {
             delta += 360.0f;
         }
 
-        float m_deg_comp = v0 + delta * frac;
-        hfoc->m_angle_rad_comp = DEG_TO_RAD(m_deg_comp);
+        hfoc->m_angle_deg_comp = v0 + delta * frac;
+        hfoc->m_angle_rad_comp = DEG_TO_RAD(hfoc->m_angle_deg_comp);
     }
     else {
         hfoc->m_angle_rad_comp = 0.0f;
@@ -522,29 +522,59 @@ void foc_get_mech_degree(foc_t *hfoc, float Ts) {
     if (++hfoc->encoder_loop_count < SPEED_CONTROL_CYCLE) return;
     hfoc->encoder_loop_count = 0;
 
-    float rad_diff = hfoc->e_rad - hfoc->last_e_rad;
-    hfoc->last_e_rad = hfoc->e_rad;
+    // calculate mechanical angle (degree)
+    if (hfoc->foc_mode == FOC_MODE_SENSORED ||
+        hfoc->foc_mode == FOC_MODE_HYBRID) {
+        float encoder_deg = hfoc->m_angle_deg_comp;
 
-    if (rad_diff < -PI) {
-        hfoc->m_angle_overflow_count++;
-    } else if (rad_diff > PI) {
-        hfoc->m_angle_overflow_count--;
+        float deg_diff = encoder_deg - hfoc->last_encoder_deg;
+        hfoc->last_encoder_deg = encoder_deg;
+        
+        if (deg_diff < -180.0f) {
+            hfoc->m_angle_overflow_count++;
+        } else if (deg_diff > 180.0f) {
+            hfoc->m_angle_overflow_count--;
+        }
+        float total_m_angle = encoder_deg + (float)hfoc->m_angle_overflow_count * 360.0f;
+        float mechanical_angle_deg = total_m_angle * hfoc->gear_ratio;
+        hfoc->actual_angle = mechanical_angle_deg;
+    }
+    else {
+        float rad_diff = hfoc->e_rad - hfoc->last_e_rad;
+        hfoc->last_e_rad = hfoc->e_rad;
+
+        if (rad_diff < -PI) {
+            hfoc->m_angle_overflow_count++;
+        } else if (rad_diff > PI) {
+            hfoc->m_angle_overflow_count--;
+        }
+        float total_e_angle = hfoc->e_rad + (float)hfoc->m_angle_overflow_count * TWO_PI;
+        float mechanical_angle_deg = RAD_TO_DEG(total_e_angle) / (float)hfoc->pole_pairs * hfoc->gear_ratio;
+        hfoc->actual_angle = mechanical_angle_deg;
     }
 
-    // calculate mechanical angle (degree)
-    float total_e_angle = hfoc->e_rad + (float)hfoc->m_angle_overflow_count * TWO_PI;
-    float mechanical_angle_deg = RAD_TO_DEG(total_e_angle) / (float)hfoc->pole_pairs * hfoc->gear_ratio;
-    hfoc->actual_angle = mechanical_angle_deg;
-
     // calculate e_omega
-    rad_diff -= TWO_PI * floorf((rad_diff + PI) / TWO_PI);
-    float e_omega = rad_diff / (Ts * SPEED_CONTROL_CYCLE);
+    for (uint16_t i = 0; i < SPEED_WINDOW_SIZE - 1; i++) {
+        hfoc->e_rad_window[i] = hfoc->e_rad_window[i + 1];
+    }
+    hfoc->e_rad_window[SPEED_WINDOW_SIZE - 1] = hfoc->e_rad;
+    float delta_e_rad = hfoc->e_rad_window[SPEED_WINDOW_SIZE - 1] - hfoc->e_rad_window[0];
+    delta_e_rad -= TWO_PI * floorf((delta_e_rad + PI) / TWO_PI);
+    float e_omega = delta_e_rad / ((SPEED_WINDOW_SIZE - 1) * Ts * SPEED_CONTROL_CYCLE);
     hfoc->encoder_e_omega = second_order_lpf_update(&hfoc->e_omega_lpf, e_omega);
 }
 
 void foc_update(foc_t *hfoc, float Ts) {
     foc_sensored_calc_electric_angle(hfoc);
     foc_get_mech_degree(hfoc, Ts);
+    if (!hfoc->start_foc) {
+        hfoc->init_tick++;
+        if (hfoc->init_tick > 100) {
+            hfoc->start_foc = 1;
+            foc_reset(hfoc);
+        }
+        return;
+    }
     switch (hfoc->motor_mode) {
         case MOTOR_MODE_TORQUE_CONTROL: {
             foc_current_control_update(hfoc, Ts);

@@ -12,7 +12,7 @@ int sc_start_signal_dc(self_commissioning_t *sc, float dc) {
     sc->signal_offset = dc;
     sc->signal_t = 0;
     sc->signal_start_t = 0;
-    sc->signal_delay_t = 0.2f/(1.0f/20000.0f);
+    sc->signal_delay_t = 0.2f/FOC_TS;
     memset(sc->v_buffer, 0, sizeof(sc->v_buffer));
     memset(sc->i_buffer, 0, sizeof(sc->i_buffer));
     sc->signal_flag = 1;
@@ -26,7 +26,7 @@ int sc_start_signal_sinusoidal(self_commissioning_t *sc, float amp, float freq, 
     sc->signal_offset = offset;
     sc->signal_t = 0;
     sc->signal_start_t = 0;
-    sc->signal_delay_t = 0.2f/(1.0f/20000.0f);
+    sc->signal_delay_t = 0.2f/FOC_TS;
     memset(sc->v_buffer, 0, sizeof(sc->v_buffer));
     memset(sc->i_buffer, 0, sizeof(sc->i_buffer));
     sc->signal_flag = 1;
@@ -60,7 +60,7 @@ int sc_start_calibrate_abs_encoder(self_commissioning_t *sc) {
     sc->signal_t = 0;
     sc->last_signal_t = 0;
     sc->signal_start_t = 0;
-    sc->signal_delay_t = 0.2f/(1.0f/20000.0f);
+    sc->signal_delay_t = 0.2f/FOC_TS;
     if (sc->p_foc->p_abs_encoder_error_comp_deg) {
         for (int i = 0; i < ERROR_LUT_SIZE; i++) {
             sc->p_foc->p_abs_encoder_error_comp_deg[i] = 0;
@@ -243,7 +243,7 @@ static float circular_mean(float a, float b) {
 }
 
 void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
-    float vd = 1.5f;
+    float vd = 1.8f;
     float vq = 0.0f;
     
     float mech_degree = sc->p_foc->get_mech_degre();
@@ -253,7 +253,7 @@ void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
         sc->signal_calibrate_encoder_idx = 0;
     }
     else {
-        if (sc->signal_t - sc->last_signal_t >= 50) {
+        if (sc->signal_t - sc->last_signal_t >= 150) {
             sc->last_signal_t = sc->signal_t;
             float actual_degree = (float)sc->signal_calibrate_encoder_idx / ERROR_LUT_SIZE * 360.0f;
             if (sc->p_foc->p_abs_encoder_error_comp_deg) {

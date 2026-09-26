@@ -206,7 +206,7 @@ static void init_foc(void) {
 
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
   foc_feedback_sensor_init(&hfoc1, motor1_as5047p_get_mech_deg, hstorage1.memory.encoder_config.error_comp_deg, NORMAL_DIR);
-  foc_speed_feedback_sensor_init(&hfoc1, 600.0f, 1.0f/SPEED_TS);
+  foc_speed_feedback_sensor_init(&hfoc1, 500.0f, 1.0f/SPEED_TS);
 
   link_can_init(hfoc1.motor.device_id);
   sfm_usb_com_init(&hsfm_usb_com, usb_send_data);

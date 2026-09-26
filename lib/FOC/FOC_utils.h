@@ -24,12 +24,7 @@
 #define MAG_CAL_RES (1024*2)
 #define MAG_CAL_STEP ((TWO_PI * POLE_PAIR) / (float)MAG_CAL_RES)
 
-#define is_foc_ready() (foc_ready)
-#define foc_reset_flag() (foc_ready = 0)
-#define foc_set_flag() (foc_ready = 1)
-
-/* extern variable */
-extern _Bool foc_ready;
+#define SPEED_WINDOW_SIZE 16
 
 #if DEBUG_HFI
 extern float param1_debug_buff[MAX_SAMPLE_BUFF];
@@ -82,6 +77,9 @@ typedef struct {
 	foc_mode_t foc_mode;
 	motor_mode_t motor_mode;
 
+	_Bool start_foc;
+	uint32_t init_tick;
+
 	uint8_t pole_pairs;
 	float kv;
 	float Rs;
@@ -92,11 +90,14 @@ typedef struct {
 
 	float m_angle_rad; // mechanical angle
 	float m_angle_rad_comp;
+	float m_angle_deg_comp;
+	float last_encoder_deg;
 	float encoder_e_angle_rad; // electrical angle
 	float encoder_e_omega;
 	float e_rad;
 	float last_e_rad;
 	float e_omega;
+	float e_rad_window[32];
 
 	float vd, vq;
 	float id, iq;

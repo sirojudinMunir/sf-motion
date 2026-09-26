@@ -13,7 +13,7 @@ plotter = LivePlotter(
     max_points=1000,
     port=None,  # No auto-connect
     baudrate=115200,
-    node_id=0x00
+    node_id=0x07
 )
 
 # Run ------------------------------------------

@@ -165,13 +165,13 @@ class DataAcquisitionThread(QtCore.QThread):
                 address = payload[2]
                 data = payload[3:]
 
-                print(
-                    f"RX frame: "
-                    f"type=0x{com_type:02X}, "
-                    f"node_id=0x{node_id:02X}, "
-                    f"addr=0x{address:02X}, "
-                    f"data={data.hex(' ')}"
-                )
+                # print(
+                #     f"RX frame: "
+                #     f"type=0x{com_type:02X}, "
+                #     f"node_id=0x{node_id:02X}, "
+                #     f"addr=0x{address:02X}, "
+                #     f"data={data.hex(' ')}"
+                # )
 
                 if com_type == 0x00: # RESPONSE
                     self.response_queue.put(
@@ -502,6 +502,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             elif motor_mode == 1:
                 self.enable_streaming(self.motor.channel.speed_set_point)
                 self.enable_streaming(self.motor.channel.actual_rpm)
+                self.enable_streaming(self.motor.channel.actual_angle)
             elif motor_mode == 2:
                 self.enable_streaming(self.motor.channel.position_set_point)
                 self.enable_streaming(self.motor.channel.actual_angle)

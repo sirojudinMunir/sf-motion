@@ -14,7 +14,7 @@
 #endif
 
 #define AS5047P_REG_ANGLE  0x3FFF
-#define AS5047P_WRITE_CMD  0x4000
+#define AS5047P_READ_CMD   0x4000
 
 static uint8_t calc_even_parity(uint16_t value) {
     value ^= value >> 8;
@@ -49,11 +49,16 @@ void AS5047P_set_rpm_filter_fc(AS5047P_t *encd, float fc, float Ts) {
 
 int AS5047P_start(AS5047P_t *encd) {
     if (encd->spi_transfer_flag) return 0;
-    uint16_t cmd = AS5047P_WRITE_CMD | AS5047P_REG_ANGLE;
+    uint16_t cmd = AS5047P_READ_CMD | AS5047P_REG_ANGLE;
     cmd |= (calc_even_parity(cmd) << 15);  // bit 15 parity
 
+    uint8_t tx_buf[2];
+    tx_buf[0] = (uint8_t)(cmd >> 8);
+    tx_buf[1] = (uint8_t)(cmd & 0xFF);
+
 	encd->spi_cs(0);
-	if (encd->spi_transfer((uint8_t*)&cmd, encd->spi_rx_buffer, 2) != 0) {
+    if (encd->spi_transfer(tx_buf, encd->spi_rx_buffer, 2) != 0) {
+        encd->spi_cs(1);
         return -1;
     }
 
@@ -83,7 +88,7 @@ void AS5047P_calc_degree(AS5047P_t *encd) {
     // }
 
     uint16_t pos = raw_data & 0x3FFF;
-    encd->raw_pos = (encd->dir == SENSOR_DIR_NORMAL)? pos : (0x3FFF - pos);
+    encd->raw_pos = (encd->dir == SENSOR_DIR_NORMAL) ? pos : (uint16_t)((0x4000 - pos) & 0x3FFF);
     const float angle_raw = (float)encd->raw_pos * encd->count_to_deg_scale;
 
     // Filter IIR dengan wrap-around

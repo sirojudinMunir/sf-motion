@@ -63,7 +63,7 @@ class SFMotion:
     def _send_frame(self, com_type, address, data=b""):
         payload = bytes([com_type, self.node_id, address]) + data
         frame = (self.HEADER + bytes([len(payload)]) + payload)
-        print(f"TX: {frame.hex(' ')}")
+        # print(f"TX: {frame.hex(' ')}")
         self.ser.write(frame)
 
     def read(self, address):
@@ -163,6 +163,8 @@ class SFMotion:
         self.get_motor_param()
         self.set_foc_bandwidth(500)
         self.set_start_calibrate_abs_encoder()
+        self.set_pid_speed(0.005, 0.8, 10)
+        self.set_pid_position(10, 0, 0, 1000)
 
     def get_motor_param(self):
         pole_pairs = self.get_pole_pairs()
@@ -191,3 +193,47 @@ class SFMotion:
         self.set_iq_kp(iq_kp)
         self.set_iq_ki(iq_ki)
         self.set_iq_deadband(0)
+
+    def set_pid_speed(self, kp, ki, max_out, deadband=0):
+        self.set_speed_kp(kp)
+        self.set_speed_ki(ki)
+        self.set_speed_out_max(max_out)
+        self.set_speed_deadband(deadband)
+
+    def get_pid_speed(self):
+        kp = self.get_speed_kp()
+        ki = self.get_speed_ki()
+        max_out = self.get_speed_out_max()
+        deadband = self.get_speed_deadband()
+        return {
+            "kp": kp,
+            "ki": ki,
+            "max_out": max_out,
+            "deadband": deadband
+        }
+
+    def set_pid_position(self, kp, ki, kd, max_out, deadband=0, d_filter_fc=20):
+        self.set_position_kp(kp)
+        self.set_position_ki(ki)
+        self.set_position_kd(kd)
+        self.set_position_out_max(max_out)
+        self.set_position_deadband(deadband)
+        self.set_position_d_filter_fc(d_filter_fc)
+
+    def get_pid_position(self):
+        kp = self.get_position_kp()
+        ki = self.get_position_ki()
+        kd = self.get_position_kd()
+        max_out = self.get_position_out_max()
+        deadband = self.get_position_deadband()
+        d_filter_fc = self.get_position_d_filter_fc()
+        return {
+            "kp": kp,
+            "ki": ki,
+            "kd": kd,
+            "max_out": max_out,
+            "deadband": deadband,
+            "d_filter_fc": d_filter_fc
+        }
+
+    
