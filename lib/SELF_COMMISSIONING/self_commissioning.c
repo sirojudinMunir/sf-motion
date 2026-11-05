@@ -72,6 +72,18 @@ int sc_start_calibrate_abs_encoder(self_commissioning_t *sc) {
     return 0;
 }
 
+int sc_start_calc_pole_pairs(self_commissioning_t *sc) {
+    if (sc->signal_flag) return -1;
+    sc->signal_t = 0;
+    sc->last_signal_t = 0;
+    sc->signal_delay_t = 0.5f/FOC_TS;
+    sc->estimate_pole_pairs = 0;
+    foc_set_motor_mode(sc->p_foc, MOTOR_MODE_VOLTAGE_CONTROL);
+    sc->seq = SC_SEQUENCE_START_CALC_POLE_PAIRS;
+    sc->signal_flag = 1;
+    return 0;
+}
+
 float sc_estimate_resistance(self_commissioning_t *sc) {
     float mean_vd = 0, mean_id = 0;
 
@@ -242,14 +254,49 @@ static float circular_mean(float a, float b) {
     return mean;
 }
 
+void sc_calc_pole_pairs_update(self_commissioning_t *sc) {
+    float vd = 1.2f;
+    float vq = 0.0f;
+    
+    float mech_continuous_deg = sc->p_foc->encoder_get_continuous_mech_degre();
+
+    // expected CCW rotation
+    if (sc->signal_t < sc->signal_delay_t) {
+        sc->encoder_last_pos_deg = mech_continuous_deg;
+        sc->signal_calibrate_encoder_idx = 0;
+    }
+    else {
+        if (sc->signal_t - sc->last_signal_t >= 150) {
+            sc->last_signal_t = sc->signal_t;
+
+            sc->e_rad_increment += DEG_TO_RAD(360.0f / 100.0f);
+            if (sc->e_rad_increment >= TWO_PI){
+                sc->e_rad_increment = 0.0f;
+                sc->estimate_pole_pairs++;
+            }
+
+            if (sc->estimate_pole_pairs > 0 && fabsf(mech_continuous_deg - sc->encoder_last_pos_deg) >= 360.0f) {
+                foc_set_open_loop_voltage(sc->p_foc, 0, 0, 0);
+                // set motor phase direction
+                sc->p_foc->motor.is_phase_inverted = ((mech_continuous_deg > sc->encoder_last_pos_deg)? 0 : 1);
+                // set motor pole pairs
+                sc->p_foc->pole_pairs = sc->estimate_pole_pairs;
+                sc->signal_flag = 0;
+                sc->measure_done_flag = 1;
+                return;
+            }
+        }
+    }
+
+    foc_set_open_loop_voltage(sc->p_foc, vd, vq, sc->e_rad_increment);
+    sc->signal_t++;
+}
+
 void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
     float vd = 1.8f;
     float vq = 0.0f;
     
-    float mech_degree = fmodf(sc->p_foc->encoder_get_mech_degre(), 360.0f);
-    if (mech_degree < 0.0f) {
-        mech_degree += 360.0f;
-    }
+    float mech_degree = sc->p_foc->encoder_get_mech_degre();
 
     if (sc->signal_t < sc->signal_delay_t) {
         sc->abs_encoder_deg_initial = mech_degree;
@@ -285,18 +332,13 @@ void sc_calibrate_abs_encoder_update(self_commissioning_t *sc) {
 
                     while (changed && max_iter-- > 0) {
                         changed = 0;
-                        float temp[ERROR_LUT_SIZE];
                         for (int i = 0; i < ERROR_LUT_SIZE; i++) {
-                            temp[i] = abs_error_comp[i];
-                        }
-
-                        for (int i = 0; i < ERROR_LUT_SIZE; i++) {
-                            if (temp[i] == 0.0f) {
+                            if (abs_error_comp[i] == 0.0f) {
                                 int left  = (i - 1 + ERROR_LUT_SIZE) % ERROR_LUT_SIZE;
                                 int right = (i + 1) % ERROR_LUT_SIZE;
 
-                                float val_left  = temp[left];
-                                float val_right = temp[right];
+                                float val_left  = abs_error_comp[left];
+                                float val_right = abs_error_comp[right];
 
                                 if (val_left != 0.0f && val_right != 0.0f) {
                                     abs_error_comp[i] = circular_mean(val_left, val_right);
@@ -342,6 +384,10 @@ void sc_update(self_commissioning_t *sc, float Ts) {
         }
         case SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER: {
             sc_calibrate_abs_encoder_update(sc);
+            break;
+        }
+        case SC_SEQUENCE_START_CALC_POLE_PAIRS: {
+            sc_calc_pole_pairs_update(sc);
             break;
         }
         default:

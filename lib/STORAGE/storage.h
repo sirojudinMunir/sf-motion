@@ -23,6 +23,7 @@ typedef struct {
     uint32_t pwm_freq;
 	float gear_ratio;
     float max_current_amp;
+    _Bool is_phase_inverted;
 }storage_motor_config_t;
 
 typedef struct {
@@ -81,7 +82,7 @@ typedef struct {
     float scale; // raw value to deg
     float elec_phase_offset_deg;
     float mech_offset_deg;
-    _Bool is_dir_reverse;
+    _Bool is_dir_inverted;
     float pll_filt_bandwidth;
     float pll_filt_damping_ratio;
     float error_comp_deg[ERROR_LUT_SIZE];

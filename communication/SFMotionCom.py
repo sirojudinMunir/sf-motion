@@ -2,8 +2,10 @@ import struct
 import serial
 import time
 import json
+import threading
 import numpy as np
 from enum import IntEnum
+from PyQt5 import QtCore
 
 class SFMComType(IntEnum):
     RESPONSE = 0x00
@@ -30,6 +32,17 @@ class SFMotion:
             item["address"]: item
             for item in config["registers"]
         }
+        self.events = {
+            item["code"]: item["name"]
+            for item in config.get("event", [])
+        }
+        self._event_condition = threading.Condition()
+        self._pending_events = []
+        if self.acq_thread is not None and hasattr(self.acq_thread, "event_received"):
+            self.acq_thread.event_received.connect(
+                self._on_event_received,
+                QtCore.Qt.DirectConnection,
+            )
         self.channel = IntEnum(
             "channel",
             {
@@ -39,6 +52,43 @@ class SFMotion:
             }
         )
         self._create_api()
+
+    def handle_event(self, code):
+        """Resolve an event code using the event definitions in the register JSON."""
+        return self.events.get(code, f"unknown_event_{code}")
+
+    def _on_event_received(self, node_id, code):
+        if node_id != self.node_id:
+            return
+        with self._event_condition:
+            self._pending_events.append(code)
+            self._event_condition.notify_all()
+
+    def wait_event(self, event, timeout=None):
+        """Wait for an event name or code; return its name, or None on timeout."""
+        if isinstance(event, str):
+            event_codes = {code for code, name in self.events.items() if name == event}
+            if not event_codes:
+                raise ValueError(f"Unknown event name: {event}")
+            event_code = next(iter(event_codes))
+        else:
+            event_code = int(event)
+            if event_code not in self.events:
+                raise ValueError(f"Unknown event code: {event_code}")
+
+        deadline = None if timeout is None else time.monotonic() + timeout
+        with self._event_condition:
+            while True:
+                try:
+                    self._pending_events.remove(event_code)
+                    return self.handle_event(event_code)
+                except ValueError:
+                    pass
+
+                remaining = None if deadline is None else deadline - time.monotonic()
+                if remaining is not None and remaining <= 0:
+                    return None
+                self._event_condition.wait(remaining)
 
     def _create_api(self):
         for register in self.registers.values():
@@ -160,17 +210,19 @@ class SFMotion:
         self.set_impedance_damping(kd)
         
     def self_commissioning(self):
-        self.set_start_measure_resistance()
-        time.sleep(1)
-        self.set_start_measure_ld()
-        time.sleep(1)
-        self.set_start_measure_lq()
-        time.sleep(1)
-        self.get_motor_param()
-        self.set_foc_bandwidth(500)
-        self.set_start_calibrate_abs_encoder()
-        self.set_pid_speed(0.005, 0.8, 10)
-        self.set_pid_position(10, 0, 0, 1000)
+        self.set_start_calc_pole_pairs()
+        if self.wait_event("self_commissioning_done", timeout=60):
+            self.set_start_measure_resistance()
+            time.sleep(1)
+            self.set_start_measure_ld()
+            time.sleep(1)
+            self.set_start_measure_lq()
+            time.sleep(1)
+            self.get_motor_param()
+            self.set_foc_bandwidth(500)
+            self.set_start_calibrate_abs_encoder()
+            self.set_pid_speed(0.005, 0.8, 10)
+            self.set_pid_position(10, 0, 0, 1000)
 
     def get_motor_param(self):
         pole_pairs = self.get_pole_pairs()
@@ -252,3 +304,5 @@ class SFMotion:
 
 # motor.set_impedance_control(0.1, 0.006)
 # motor.move_s_curve(-360, 2000, 20000, 100000)
+# motor.enable_streaming(motor.channel.m_angle_rad)
+# motor.enable_streaming(motor.channel.m_angle_rad_comp)

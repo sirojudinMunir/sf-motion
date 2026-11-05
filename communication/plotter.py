@@ -89,6 +89,7 @@ class SerialPortDialog(QtWidgets.QDialog):
 
 class DataAcquisitionThread(QtCore.QThread):
     data_received = QtCore.pyqtSignal(int, int, float)
+    event_received = QtCore.pyqtSignal(int, int)
     connection_lost = QtCore.pyqtSignal()
     
     def __init__(self, serial_conn=None, parent=None):
@@ -187,10 +188,7 @@ class DataAcquisitionThread(QtCore.QThread):
                     # print(f'addr:{address} | data:{value}')
 
                 elif com_type == 0x06: # EVENT
-                    self.handle_event(
-                        address,
-                        data
-                    )
+                    self.event_received.emit(node_id, address)
 
                 else:
                     print(
@@ -434,6 +432,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             # Start acquisition thread
             self.acq_thread = DataAcquisitionThread(serial_conn=self.serial_conn)
             self.acq_thread.data_received.connect(self.on_data_received)
+            self.acq_thread.event_received.connect(self.on_event_received)
             self.acq_thread.connection_lost.connect(self.handle_connection_lost)
             self.acq_thread.start()
             
@@ -503,6 +502,12 @@ class LivePlotter(QtWidgets.QMainWindow):
             "Serial connection has been lost. Please reconnect."
         )
         self.disconnect_serial()
+
+    def on_event_received(self, node_id, event_code):
+        motor = self.motors.get(node_id)
+        event_name = motor.handle_event(event_code) if motor else f"unknown_event_{event_code}"
+        prefix = f"Node {node_id}: " if len(self.motors) > 1 else ""
+        self.console_output.appendPlainText(f"{prefix}Event: {event_name}")
 
     def get_next_color(self):
         for color in self.available_colors:

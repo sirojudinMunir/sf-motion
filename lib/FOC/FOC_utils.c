@@ -26,8 +26,13 @@ void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_m
     hfoc->get_pwm_res = get_pwm_res;
 }
 
-void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_rpm)(void), float *p_abs_encoder_error_LUT) {
+void foc_feedback_sensor_init(foc_t *hfoc, 
+							  float (*get_mech_degre)(void), 
+							  float (*encoder_get_continuous_mech_degre)(void),
+							  float (*get_rpm)(void), 
+							  float *p_abs_encoder_error_LUT) {
     hfoc->encoder_get_mech_degre = get_mech_degre;
+    hfoc->encoder_get_continuous_mech_degre = encoder_get_continuous_mech_degre;
     hfoc->encoder_get_rpm = get_rpm;
     hfoc->p_abs_encoder_error_comp_deg = p_abs_encoder_error_LUT;
 }
@@ -138,10 +143,7 @@ void foc_sensored_calc_electric_angle(foc_t *hfoc) {
     }
 
     float e_rad = 0.0f;
-    float angle_deg = fmodf(hfoc->encoder_get_mech_degre(), 360.0f);
-    if (angle_deg < 0.0f) {
-        angle_deg += 360.0f;
-    }
+    float angle_deg = hfoc->encoder_get_mech_degre();
 
     hfoc->m_angle_rad = DEG_TO_RAD(angle_deg);
     norm_angle_rad(&hfoc->m_angle_rad);
@@ -529,7 +531,7 @@ void foc_get_mech_degree(foc_t *hfoc) {
     // calculate mechanical angle (degree)
     if (hfoc->foc_mode == FOC_MODE_SENSORED ||
         hfoc->foc_mode == FOC_MODE_HYBRID) {
-        hfoc->actual_angle = hfoc->encoder_get_mech_degre();
+        hfoc->actual_angle = hfoc->encoder_get_continuous_mech_degre();
     }
     else {
         float rad_diff = hfoc->e_rad - hfoc->last_e_rad;

@@ -119,6 +119,10 @@ uint32_t motor1_get_pwm_res(void) {
 }
 
 float motor1_as5047p_get_mech_deg(void) {
+  return AS5047P_get_degree(&hencd1);
+}
+
+float motor1_as5047p_get_continuous_mech_deg(void) {
   return AS5047P_get_continuous_degree(&hencd1);
 }
 
@@ -189,7 +193,7 @@ static void init_motor(void) {
 static void init_encoder(void) {
   AS5047P_spi_config(&hencd1, motor1_as5047p_spi_transmit, motor1_as5047p_spi_cs);
   AS5047P_init(&hencd1, 
-              hstorage1.memory.encoder_config.is_dir_reverse? SENSOR_DIR_REVERSE : SENSOR_DIR_NORMAL, 
+              hstorage1.memory.encoder_config.is_dir_inverted? SENSOR_DIR_REVERSE : SENSOR_DIR_NORMAL, 
               hstorage1.memory.encoder_config.scale);
   AS5047P_set_pll_filter(&hencd1, 
                         hstorage1.memory.encoder_config.pll_filt_bandwidth, 
@@ -215,7 +219,11 @@ static void init_foc(void) {
   sc_init(&hsc1, &hfoc1);
 
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
-  foc_feedback_sensor_init(&hfoc1, motor1_as5047p_get_mech_deg, motor1_as5047p_get_rpm, hstorage1.memory.encoder_config.error_comp_deg);
+  foc_feedback_sensor_init(&hfoc1, 
+                          motor1_as5047p_get_mech_deg, 
+                          motor1_as5047p_get_continuous_mech_deg,
+                          motor1_as5047p_get_rpm, 
+                          hstorage1.memory.encoder_config.error_comp_deg);
 
   link_can_init(hfoc1.motor.device_id);
   sfm_usb_com_init(&hsfm_usb_com, usb_send_data);
@@ -285,7 +293,13 @@ static void self_commissioning_update(void) {
         break;
       case SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER:
         break;
+      case SC_SEQUENCE_START_CALC_POLE_PAIRS:
+        break;
+      default:
+        break;
     }
+    sfm_com_send_event(&husb_com, SFM_EVENT_SELFCOM_DONE);
+    sfm_com_send_event(&hcan_com, SFM_EVENT_SELFCOM_DONE);
   }
 }
 

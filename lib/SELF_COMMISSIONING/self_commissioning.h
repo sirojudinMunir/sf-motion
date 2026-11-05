@@ -13,6 +13,7 @@ typedef enum {
     SC_SEQUENCE_START_MEASURE_LD,
     SC_SEQUENCE_START_MEASURE_LQ,
     SC_SEQUENCE_START_CALIBRATE_ABS_ENCODER,
+    SC_SEQUENCE_START_CALC_POLE_PAIRS,
 }sc_sequence_t;
 
 typedef struct {
@@ -34,6 +35,10 @@ typedef struct {
     float Rs;
     float Ld;
     float Lq;
+    
+    float e_rad_increment;
+    uint8_t estimate_pole_pairs;
+    float encoder_last_pos_deg;
 }self_commissioning_t;
 
 void sc_init(self_commissioning_t *sc, foc_t *hfoc);
@@ -41,6 +46,7 @@ int sc_start_measure_motor_resistance(self_commissioning_t *sc);
 int sc_start_measure_motor_Ld(self_commissioning_t *sc);
 int sc_start_measure_motor_Lq(self_commissioning_t *sc);
 int sc_start_calibrate_abs_encoder(self_commissioning_t *sc);
+int sc_start_calc_pole_pairs(self_commissioning_t *sc);
 void sc_update(self_commissioning_t *sc, float Ts);
 _Bool sc_is_measure_done(self_commissioning_t *sc);
 sc_sequence_t sc_get_seq(self_commissioning_t *sc);

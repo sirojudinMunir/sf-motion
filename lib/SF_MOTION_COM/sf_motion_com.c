@@ -35,6 +35,16 @@ int8_t sfm_com_send_data_plotter(sfm_com_t *com, sfm_plotter_t *plotter, void *d
   return 0;
 }
 
+int8_t sfm_com_send_event(sfm_com_t *com, sfm_event_t event) {
+  if (com->send_data_flag) return -1;
+  com->data_tx_len = SFM_COM_HEADER_LENGTH;
+  com->data_tx[SFM_COM_COMTYPE_INDEX] = (uint8_t)SFM_COM_TYPE_EVENT;
+  com->data_tx[SFM_COM_DEVICE_ID_INDEX] = (uint8_t)(com->pfoc->motor.device_id & 0xff);
+  com->data_tx[SFM_COM_ADDRESS_INDEX] = (uint8_t)event;
+  com->send_data_flag = 1;
+  return 0;
+}
+
 sfm_com_type_t sfm_com_get_com_type(sfm_com_t *com) {
   return com->data_rx[SFM_COM_COMTYPE_INDEX];
 }
@@ -196,6 +206,12 @@ static int8_t set_start_calibrate_abs_encoder(sfm_com_t *com, void *data) {
   return 0;
 }
 
+static int8_t set_start_calc_pole_pairs(sfm_com_t *com, void *data) {
+  (void) data;
+  if (sc_start_calc_pole_pairs(com->psc) != 0) return -1;
+  return 0;
+}
+
 /************************************************************************************************ */
 
 SFM_GETTER(get_foc_mode, *(foc_mode_t *)data = foc_get_mode(com->pfoc))
@@ -230,6 +246,9 @@ SFM_SETTER(set_gear_ratio, com->pfoc->gear_ratio = *(float *)data)
 
 SFM_GETTER(get_limit_current, *(float *)data = com->pfoc->max_current)
 SFM_SETTER(set_limit_current, com->pfoc->max_current = *(float *)data)
+
+SFM_GETTER(get_motor_phase_dir, *(uint8_t *)data = (uint8_t)com->pstorage->memory.motor_config.is_phase_inverted)
+SFM_SETTER(set_motor_phase_dir, com->pstorage->memory.motor_config.is_phase_inverted = (_Bool)*(uint8_t *)data)
 
 /************************************************************************************************ */
 
@@ -326,6 +345,20 @@ SFM_SETTER(set_vbus_sense_scale, com->pfoc->motor.vbus_sense_gain = *(float *)da
 
 SFM_GETTER(get_vbus_sense_offset, *(float *)data = com->pfoc->motor.vbus_sense_offset)
 SFM_SETTER(set_vbus_sense_offset, com->pfoc->motor.vbus_sense_offset = *(float *)data)
+
+/************************************************************************************************ */
+
+SFM_GETTER(get_encoder_scale, *(float *)data = com->pstorage->memory.encoder_config.scale)
+SFM_SETTER(set_encoder_scale, com->pstorage->memory.encoder_config.scale = *(float *)data)
+
+SFM_GETTER(get_encoder_dir, *(uint8_t *)data = (_Bool)com->pstorage->memory.encoder_config.is_dir_inverted)
+SFM_SETTER(set_encoder_dir, com->pstorage->memory.encoder_config.is_dir_inverted = (_Bool)*(uint8_t *)data)
+
+SFM_GETTER(get_encoder_pll_bandwidth, *(float *)data = com->pstorage->memory.encoder_config.pll_filt_bandwidth)
+SFM_SETTER(set_encoder_pll_bandwidth, com->pstorage->memory.encoder_config.pll_filt_bandwidth = *(float *)data)
+
+SFM_GETTER(get_encoder_pll_damp_ratio, *(float *)data = com->pstorage->memory.encoder_config.pll_filt_damping_ratio)
+SFM_SETTER(set_encoder_pll_damp_ratio, com->pstorage->memory.encoder_config.pll_filt_damping_ratio = *(float *)data)
 
 /************************************************************************************************ */
 
@@ -490,6 +523,15 @@ sfm_com_register_handler_t sfm_com_reg[] = {
   {get_trajectory_a_max, set_trajectory_a_max, SFM_COM_STREAM_DIS, sizeof(float)},          // 81
   {get_trajectory_j_max, set_trajectory_j_max, SFM_COM_STREAM_DIS, sizeof(float)},          // 82
   {NULL, set_trajectory_target_pos, SFM_COM_STREAM_DIS, sizeof(float)},                     // 83
+
+  {NULL, set_start_calc_pole_pairs, SFM_COM_STREAM_DIS, 0},                                 // 84
+
+  {get_encoder_scale, set_encoder_scale, SFM_COM_STREAM_DIS, 0},                            // 85
+  {get_encoder_dir, set_encoder_dir, SFM_COM_STREAM_DIS, 0},                                // 86
+  {get_encoder_pll_bandwidth, set_encoder_pll_bandwidth, SFM_COM_STREAM_DIS, 0},            // 87
+  {get_encoder_pll_damp_ratio, set_encoder_pll_damp_ratio, SFM_COM_STREAM_DIS, 0},          // 88
+
+  {get_motor_phase_dir, set_motor_phase_dir, SFM_COM_STREAM_DIS, 0},          // 89
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);

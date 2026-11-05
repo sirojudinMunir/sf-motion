@@ -31,6 +31,7 @@ typedef struct {
   SecondOrderLPF ib_lpf;
   SecondOrderLPF ic_lpf;
   SecondOrderLPF vbus_lpf;
+  _Bool is_phase_inverted;
 }motor_t;
 
 void motor_init_pwm(motor_t *hmotor, volatile uint32_t *pwm_a, volatile uint32_t *pwm_b, volatile uint32_t *pwm_c);

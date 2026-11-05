@@ -34,6 +34,11 @@ typedef enum {
   SFM_COM_STREAM_ENA = 1,
 } sfm_com_streaming_t;
 
+typedef enum {
+  SFM_EVENT_MOVE_DONE,
+  SFM_EVENT_SELFCOM_DONE,
+}sfm_event_t;
+
 typedef struct {
   uint8_t addr;
   uint8_t data[8];
@@ -74,6 +79,7 @@ void sfm_com_init(sfm_com_t *com,
                   void (*system_reset)(void),
                   foc_t *pfoc, storage_t *pstorage, self_commissioning_t *psc);
 void sfm_com_update(sfm_com_t *com);
+int8_t sfm_com_send_event(sfm_com_t *com, sfm_event_t event);
 
 
 #endif

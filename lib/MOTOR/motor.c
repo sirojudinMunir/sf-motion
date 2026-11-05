@@ -46,14 +46,26 @@ void motor_set_current_sense_offset(motor_t *hmotor, float ia_offset, float ib_o
 
 void motor_set_pwm(motor_t *hmotor, uint32_t pwm_a, uint32_t pwm_b, uint32_t pwm_c) {
   *hmotor->p_pwm_va = pwm_a;
-  *hmotor->p_pwm_vb = pwm_b;
-  *hmotor->p_pwm_vc = pwm_c;
+  if (hmotor->is_phase_inverted) {
+    *hmotor->p_pwm_vb = pwm_c;
+    *hmotor->p_pwm_vc = pwm_b;
+  }
+  else {
+    *hmotor->p_pwm_vb = pwm_b;
+    *hmotor->p_pwm_vc = pwm_c;
+  }
 }
 
 void motor_get_current(motor_t *hmotor, float *ia, float *ib, float *ic) {
   *ia = hmotor->ia;
-  *ib = hmotor->ib;
-  *ic = hmotor->ic;
+  if (hmotor->is_phase_inverted) {
+    *ib = hmotor->ic;
+    *ic = hmotor->ib;
+  }
+  else {
+    *ib = hmotor->ib;
+    *ic = hmotor->ic;
+  }
 }
 
 void motor_get_power_voltage(motor_t *hmotor, float *pv) {

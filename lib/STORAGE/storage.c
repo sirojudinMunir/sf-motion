@@ -40,6 +40,7 @@ void storage_default_config(storage_t *s) {
     s->memory.motor_config.pwm_freq = 20000;
     s->memory.motor_config.gear_ratio = 1.0f;
     s->memory.motor_config.max_current_amp = 8.0f;
+    s->memory.motor_config.is_phase_inverted = 0;
 
     s->memory.id_control.kp = 0.02f;
     s->memory.id_control.ki = 12.0f;
@@ -84,7 +85,7 @@ void storage_default_config(storage_t *s) {
     s->memory.encoder_config.scale = (360.0f / 16383.0f);
     s->memory.encoder_config.elec_phase_offset_deg = 0;
     s->memory.encoder_config.mech_offset_deg = 0;
-    s->memory.encoder_config.is_dir_reverse = 1;
+    s->memory.encoder_config.is_dir_inverted = 1;
     s->memory.encoder_config.pll_filt_bandwidth = 500.0f;
     s->memory.encoder_config.pll_filt_damping_ratio = 0.7f;
     memset(s->memory.encoder_config.error_comp_deg, 0, sizeof(s->memory.encoder_config.error_comp_deg));
@@ -102,6 +103,7 @@ void storage_copy_to_local(storage_t *s, foc_t *hfoc) {
     hfoc->flux_linkage = s->memory.motor_config.flux_linkage;
     hfoc->gear_ratio = s->memory.motor_config.gear_ratio;
     hfoc->max_current = s->memory.motor_config.max_current_amp;
+    hfoc->motor.is_phase_inverted = s->memory.motor_config.is_phase_inverted;
 
     hfoc->id_ctrl.kp = s->memory.id_control.kp;
     hfoc->id_ctrl.ki = s->memory.id_control.ki;
@@ -155,6 +157,7 @@ void storage_copy_from_local(storage_t *s, foc_t *hfoc) {
     s->memory.motor_config.flux_linkage = hfoc->flux_linkage;
     s->memory.motor_config.gear_ratio = hfoc->gear_ratio;
     s->memory.motor_config.max_current_amp = hfoc->max_current;
+    s->memory.motor_config.is_phase_inverted = hfoc->motor.is_phase_inverted;
 
     // ID Control
     s->memory.id_control.kp = hfoc->id_ctrl.kp;

@@ -172,11 +172,16 @@ typedef struct {
 	void (*disable_motor)(void);
 	uint32_t (*get_pwm_res)(void);
 	float (*encoder_get_mech_degre)(void);
+	float (*encoder_get_continuous_mech_degre)(void);
 	float (*encoder_get_rpm)(void);
 }foc_t;
 
 void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_motor)(void), uint32_t (*get_pwm_res)(void));
-void foc_feedback_sensor_init(foc_t *hfoc, float (*get_mech_degre)(void), float (*get_rpm)(void), float *p_abs_encoder_error_LUT);
+void foc_feedback_sensor_init(foc_t *hfoc, 
+							  float (*get_mech_degre)(void), 
+							  float (*encoder_get_continuous_mech_degre)(void),
+							  float (*get_rpm)(void), 
+							  float *p_abs_encoder_error_LUT);
 void foc_motor_init(foc_t *hfoc, uint8_t pole_pairs, float kv);
 void foc_gear_reducer_init(foc_t *hfoc, float ratio);
 void foc_set_limit_current(foc_t *hfoc, float i_limit);

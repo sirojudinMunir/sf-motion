@@ -631,6 +631,24 @@
       "read": false,
       "write": true,
       "streaming": false
+    },
+    {
+      "address": 84,
+      "name": "start_calc_pole_pairs",
+      "format": null,
+      "read": false,
+      "write": true,
+      "streaming": false
+    }
+  ],
+  "event": [
+    {
+      "code": 0,
+      "name": "move_done"
+    },
+    {
+      "code": 1,
+      "name": "self_commissioning_done"
     }
   ]
 }
