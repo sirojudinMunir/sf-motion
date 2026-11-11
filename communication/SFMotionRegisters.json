@@ -703,6 +703,14 @@
       "read": false,
       "write": false,
       "streaming": true
+    },
+    {
+      "address": 93,
+      "name": "following_error",
+      "format": null,
+      "read": true,
+      "write": false,
+      "streaming": true
     }
   ],
   "event": [

@@ -218,6 +218,8 @@ static int8_t set_start_measure_cogging_torque(sfm_com_t *com, void *data) {
   return 0;
 }
 
+/************************************************************************************************ */
+
 // debug
 static int8_t get_cogging_current(sfm_com_t *com, void *data) {
   *(float *)data = com->pstorage->memory.cogging_torque.current_LUT[com->cogging_current_lut_idx];
@@ -226,6 +228,11 @@ static int8_t get_cogging_current(sfm_com_t *com, void *data) {
     com->plotter_line = 0;
     com->plotter_update_ms = 10;
   }
+  return 0;
+}
+
+static int8_t get_following_error(sfm_com_t *com, void *data) {
+  *(float *)data = com->pfoc->pos_ref - com->pfoc->actual_angle;
   return 0;
 }
 
@@ -559,6 +566,7 @@ sfm_com_register_handler_t sfm_com_reg[] = {
   {get_anti_cogging_enable, set_anti_cogging_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},  // 91
 
   {get_cogging_current, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                           // 92
+  {get_following_error, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                           // 93
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);

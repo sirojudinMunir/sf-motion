@@ -205,14 +205,23 @@ static void init_foc(void) {
 #if USB_TO_CAN
   link_can_init(USB_TO_CAN_DEVICE_ID);
   sfm_usb_com_init(&hsfm_usb_com, usb_send_data);
-  sfm_com_init(&husb_com, sfm_com_usb_recv_data, sfm_com_usb_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
-  sfm_com_init(&hcan_com, can_recv_data, can_send_data, HAL_GetTick, &hfoc1, &hstorage1, &hsc1);
+  sfm_com_init(&husb_com, 
+              sfm_com_usb_recv_data, 
+              sfm_com_usb_send_data, 
+              HAL_GetTick,
+              link_system_reset,
+              &hfoc1, &hstorage1, &hsc1);
+  sfm_com_init(&hcan_com, 
+              can_recv_data, 
+              can_send_data, 
+              HAL_GetTick,
+              link_system_reset,
+              &hfoc1, &hstorage1, &hsc1);
 #else
   storage_init(&hstorage1, write_flash, read_flash);
   storage_read_config(&hstorage1);
   storage_copy_to_local(&hstorage1, &hfoc1);
 
-  init_trig_lut();
   link_set_pwm_freq(&htim1, BLDC_PWM_FREQ);
   init_motor();
   init_encoder();
@@ -258,7 +267,7 @@ static void init_foc(void) {
   pid_reset(&hfoc1.fw_ctrl);
   pid_set_ts(&hfoc1.fw_ctrl, FOC_TS);
 
-  // foc_set_mode(&hfoc1, FOC_MODE_SENSORED);
+  // foc_set_mode(&hfoc1, FOC_MODE_SENSORLESS_SMO_HFI_NEW);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
   HAL_Delay(50);

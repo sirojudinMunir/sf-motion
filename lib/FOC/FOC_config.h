@@ -27,15 +27,15 @@
 #define HFI_FREQ 4000.0f
 
 /* LPF Cut-off frequency for Id and Iq */
-#define HFI_ID_LPF_FC 200.0f
-#define HFI_IQ_LPF_FC 200.0f
+#define HFI_ID_LPF_FC 500.0f
+#define HFI_IQ_LPF_FC 500.0f
 
 /* LPF Cut-off frequency for Ialpha and Ibeta (just for hfi_lpf) */
 #define HFI_I_ALPHA_BETA_LPF_FC 200.0f
 
 /* HFI to SMO speed threshold (RPM) */
-#define HFI_TO_SMO_THRESHOLD 400.0f
-#define SMO_TO_HFI_THRESHOLD 300.0f
+#define HFI_TO_SMO_THRESHOLD 300.0f
+#define SMO_TO_HFI_THRESHOLD 200.0f
 
 /* Polarity Detection Parameters */
 #define PD_V_PULSE 4.0f

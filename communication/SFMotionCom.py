@@ -224,6 +224,18 @@ class SFMotion:
             self.set_pid_speed(0.008, 0.8, 10)
             self.set_pid_position(10, 0, 0, 1000)
 
+    def self_commissioning_sensorless(self):
+        self.set_start_measure_resistance()
+        time.sleep(1)
+        self.set_start_measure_ld()
+        time.sleep(1)
+        self.set_start_measure_lq()
+        time.sleep(1)
+        self.get_motor_param()
+        self.set_foc_bandwidth(500)
+        self.set_pid_speed(0.008, 0.8, 10)
+        self.set_pid_position(10, 0, 0, 1000)
+
     def get_motor_param(self):
         pole_pairs = self.get_pole_pairs()
         rs = self.get_rs()

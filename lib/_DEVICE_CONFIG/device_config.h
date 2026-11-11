@@ -5,7 +5,7 @@
 // 1 -> USB to CAN converter mode
 #define USB_TO_CAN  (0)
 
-#define USB_TO_CAN_DEVICE_ID 0x00
+#define USB_TO_CAN_DEVICE_ID 0x70
 
 // versioning (0 - 255)
 #define SF_MOTION_MAJOR_VERSION  0

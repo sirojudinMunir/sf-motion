@@ -7,17 +7,7 @@
 
 #include "FOC_math.h"
 #include "math.h"
-
-float sin_lut[LUT_SIZE];
-float cos_lut[LUT_SIZE];
-
-void init_trig_lut(void) {
-    for (int i = 0; i < LUT_SIZE; ++i) {
-        float angle = i * LUT_STEP;
-        sin_lut[i] = sinf(angle);
-        cos_lut[i] = cosf(angle);
-    }
-}
+#include "trig_lut_tables.h"
 
 void norm_angle_rad(float *theta) {
     while (*theta < 0) *theta += TWO_PI;
@@ -36,14 +26,7 @@ float fast_sin(float theta) {
 }
 
 float fast_cos(float theta) {
-	norm_angle_rad(&theta);
-    float index_f = theta / LUT_STEP;
-    int index = (int)index_f;
-    float frac = index_f - index;
-
-    int next_index = (index + 1) % LUT_SIZE;
-
-    return cos_lut[index] * (1.0f - frac) + cos_lut[next_index] * frac;
+    return fast_sin(theta + (TWO_PI * 0.25f));
 }
 
 float fast_atan2(float y, float x) {

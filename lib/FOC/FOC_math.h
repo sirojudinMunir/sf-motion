@@ -34,10 +34,8 @@ typedef struct {
     float imag;
 } complex_t;
 
-extern float sin_lut[LUT_SIZE];
-extern float cos_lut[LUT_SIZE];
+extern const float sin_lut[LUT_SIZE];
 
-void init_trig_lut(void);
 void norm_angle_rad(float *theta);
 float fast_sin(float theta);
 float fast_cos(float theta);
