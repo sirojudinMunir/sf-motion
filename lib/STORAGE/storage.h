@@ -94,12 +94,21 @@ typedef struct {
 }storage_cogging_torque_t;
 
 typedef struct {
+    float i2t_i_rated;
+    float i2t_i_max;
+    float i2t_t_max;
+    float min_voltage;
+    float max_voltage;
+}storage_protection_t;
+
+typedef struct {
     uint8_t valid_SOF;
 
     storage_general_t general;
     storage_motor_config_t motor_config;
     storage_current_control_t id_control;
     storage_current_control_t iq_control;
+    storage_protection_t protection;
     storage_speed_control_t speed_control;
     storage_position_control_t position_control;
     storage_impedance_control_t impedance_control;

@@ -50,6 +50,12 @@ void storage_default_config(storage_t *s) {
     s->memory.iq_control.ki = 12.0f;
     s->memory.iq_control.e_deadband = 0.0f;
 
+    s->memory.protection.i2t_i_rated = 3.0f;
+    s->memory.protection.i2t_i_max = 5.0f;
+    s->memory.protection.i2t_t_max = 10.0f;
+    s->memory.protection.min_voltage = 10.0f;
+    s->memory.protection.max_voltage = 25.0f;
+
     s->memory.speed_control.kp = 0.01f;
     s->memory.speed_control.ki = 0.1f;
     s->memory.speed_control.out_max = 10.0f;
@@ -174,6 +180,11 @@ void storage_copy_from_local(storage_t *s, foc_t *hfoc) {
     s->memory.iq_control.ki = hfoc->iq_ctrl.ki;
     s->memory.iq_control.e_deadband = hfoc->iq_ctrl.e_deadband;
     
+    // Protection
+    s->memory.protection.i2t_i_rated = hfoc->i2t.i_rated;
+    s->memory.protection.i2t_i_max = hfoc->i2t.i_max;
+    s->memory.protection.i2t_t_max = hfoc->i2t.t_max;
+
     // Speed Control
     s->memory.speed_control.kp = hfoc->speed_ctrl.kp;
     s->memory.speed_control.ki = hfoc->speed_ctrl.ki;

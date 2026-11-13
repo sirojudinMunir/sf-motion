@@ -104,14 +104,14 @@ static void MX_CAN1_Init(void);
 
 void motor1_inverter_enable(void) {
   EN_GATE1_GPIO_Port->BSRR = EN_GATE1_Pin;
-  link_enable_pwm(&htim1);
-  link_enable_adc(&hadc1);
+  // link_enable_pwm(&htim1);
+  // link_enable_adc(&hadc1);
 }
 
 void motor1_inverter_disable(void) {
   EN_GATE1_GPIO_Port->BSRR = EN_GATE1_Pin<<16;
-  link_disable_pwm(&htim1);
-  link_disable_adc(&hadc1);
+  // link_disable_pwm(&htim1);
+  // link_disable_adc(&hadc1);
 }
 
 uint32_t motor1_get_pwm_res(void) {
@@ -227,6 +227,11 @@ static void init_foc(void) {
   init_encoder();
   sc_init(&hsc1, &hfoc1);
 
+  i2t_init(&hfoc1.i2t, FOC_TS);
+  i2t_set_config(&hfoc1.i2t, 
+                hstorage1.memory.protection.i2t_i_rated,
+                hstorage1.memory.protection.i2t_i_max,
+                hstorage1.memory.protection.i2t_t_max);
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
   foc_feedback_sensor_init(&hfoc1, 
                           motor1_as5047p_get_mech_deg, 
@@ -234,6 +239,7 @@ static void init_foc(void) {
                           motor1_as5047p_get_rpm, 
                           hstorage1.memory.encoder_config.error_comp_deg);
   foc_cogging_comp_init(&hfoc1, hstorage1.memory.cogging_torque.current_LUT);
+  foc_disable(&hfoc1);
 
   link_can_init(hfoc1.motor.device_id);
   sfm_usb_com_init(&hsfm_usb_com, usb_send_data);
@@ -270,8 +276,11 @@ static void init_foc(void) {
   // foc_set_mode(&hfoc1, FOC_MODE_SENSORLESS_SMO_HFI_NEW);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
-  HAL_Delay(50);
+  HAL_Delay(500);
+  link_enable_pwm(&htim1);
+  link_enable_adc(&hadc1);
   foc_enable(&hfoc1);
+  // foc_set_motor_mode(&hfoc1, hstorage1.memory.motor_config.motor_mode);
 #endif
 }
 
@@ -313,6 +322,21 @@ static void self_commissioning_update(void) {
     }
     sfm_com_send_event(&husb_com, SFM_EVENT_SELFCOM_DONE);
     sfm_com_send_event(&hcan_com, SFM_EVENT_SELFCOM_DONE);
+  }
+}
+
+static void event_update(void) {
+  foc_error_t error_code = FOC_ERROR_NONE;
+  if (foc_get_error_flag(&hfoc1, &error_code)) {
+    switch (error_code) {
+      case FOC_ERROR_I2T_TRIPPED: {
+        sfm_com_send_event(&husb_com, SFM_EVENT_I2T_TRIPPED);
+        sfm_com_send_event(&hcan_com, SFM_EVENT_I2T_TRIPPED);
+        break;
+      }
+      default:
+        break;
+    }
   }
 }
 
@@ -417,6 +441,7 @@ int main(void)
     usb_to_can_update();
 #else
     AS5047P_update(&hencd1);
+    event_update();
     sfm_com_update(&husb_com);
     sfm_com_update(&hcan_com);
     self_commissioning_update();

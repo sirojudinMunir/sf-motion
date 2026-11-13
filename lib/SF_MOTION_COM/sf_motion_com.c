@@ -182,6 +182,17 @@ static int8_t set_save_config(sfm_com_t *com, void *data) {
   return 0;
 }
 
+static int8_t set_motor_enable(sfm_com_t *com, void *data) {
+  _Bool enable = (_Bool)*(uint8_t *)data;
+  if (enable) {
+    foc_enable(com->pfoc);
+  }
+  else {
+    foc_disable(com->pfoc);
+  }
+  return 0;
+}
+
 static int8_t set_start_measure_resistance(sfm_com_t *com, void *data) {
   (void) data;
   if (sc_start_measure_motor_resistance(com->psc) != 0) return -1;
@@ -434,6 +445,10 @@ SFM_GETTER(get_m_angle_rad, *(float *)data = com->pfoc->m_angle_rad)
 SFM_GETTER(get_m_angle_rad_comp, *(float *)data = com->pfoc->m_angle_rad_comp)
 SFM_GETTER(get_v_bus, *(float *)data = com->pfoc->v_bus)
 
+SFM_GETTER(get_encd_e_rad, *(float *)data = com->pfoc->encoder_e_angle_rad)
+SFM_GETTER(get_hfi_e_rad, *(float *)data = com->pfoc->hfi_e_rad)
+SFM_GETTER(get_smo_e_rad, *(float *)data = com->pfoc->smo_e_rad)
+
 /************************************************************************************************ */
 
 SFM_GETTER(get_trajectory_v_max, *(float *)data = com->pfoc->trajectory.v_max)
@@ -451,6 +466,17 @@ SFM_SETTER(set_trajectory_target_pos, foc_move_s_curve(com->pfoc, *(float *)data
 
 SFM_GETTER(get_anti_cogging_enable, *(uint8_t *)data = (uint8_t)foc_get_cogging_current_comp_enable(com->pfoc))
 SFM_SETTER(set_anti_cogging_enable, foc_set_cogging_current_comp_enable(com->pfoc, (_Bool)*(uint8_t *)data))
+
+/************************************************************************************************ */
+
+SFM_GETTER(get_i2t_i_rated, *(float *)data = com->pfoc->i2t.i_rated)
+SFM_SETTER(set_i2t_i_rated, com->pfoc->i2t.i_rated = *(float *)data)
+
+SFM_GETTER(get_i2t_i_max, *(float *)data = com->pfoc->i2t.i_max)
+SFM_SETTER(set_i2t_i_max, com->pfoc->i2t.i_max = *(float *)data)
+
+SFM_GETTER(get_i2t_t_max, *(float *)data = com->pfoc->i2t.t_max)
+SFM_SETTER(set_i2t_t_max, com->pfoc->i2t.t_max = *(float *)data)
 
 /************************************************************************************************ */
 
@@ -567,6 +593,16 @@ sfm_com_register_handler_t sfm_com_reg[] = {
 
   {get_cogging_current, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                           // 92
   {get_following_error, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                           // 93
+
+  {get_encd_e_rad, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                // 94
+  {get_hfi_e_rad, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                 // 95
+  {get_smo_e_rad, NULL, SFM_COM_STREAM_ENA, sizeof(float)},                                 // 96
+
+  {get_i2t_i_rated, set_i2t_i_rated, SFM_COM_STREAM_DIS, sizeof(float)},                    // 97
+  {get_i2t_i_max, set_i2t_i_max, SFM_COM_STREAM_DIS, sizeof(float)},                        // 98
+  {get_i2t_t_max, set_i2t_t_max, SFM_COM_STREAM_DIS, sizeof(float)},                        // 99
+
+  {NULL, set_motor_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                            // 100
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);
@@ -603,7 +639,7 @@ void sfm_com_init(sfm_com_t *com,
   com->psc = psc;
 
   com->plotter_tick = com->get_tick_ms();
-  com->plotter_update_ms = 10;
+  com->plotter_update_ms = 1;
 }
 
 void sfm_com_update(sfm_com_t *com) {

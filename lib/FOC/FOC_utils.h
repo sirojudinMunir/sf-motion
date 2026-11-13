@@ -12,6 +12,7 @@
 #include "FOC_config.h"
 #include "FOC_math.h"
 #include "pid_utils.h"
+#include "i2t.h"
 #include "impedance_control.h"
 #include "sliding_mode_observer.h"
 #include "pll.h"
@@ -25,12 +26,6 @@
 #define ERROR_LUT_SIZE (1024)
 #define COGGING_TORQUE_LUT_SIZE (1024)
 
-#if DEBUG_HFI
-extern float param1_debug_buff[MAX_SAMPLE_BUFF];
-extern float param2_debug_buff[MAX_SAMPLE_BUFF];
-extern float param3_debug_buff[MAX_SAMPLE_BUFF];
-extern float param4_debug_buff[MAX_SAMPLE_BUFF];
-#endif
 
 typedef enum {
 	MOTOR_MODE_DISABLE,
@@ -67,10 +62,22 @@ typedef enum {
 	P_DET_STOP
 }p_det_state_t;
 
+typedef enum {
+	FOC_ERROR_NONE,
+	FOC_ERROR_I2T_TRIPPED,
+	FOC_ERROR_OVER_VOLTAGE,
+	FOC_ERROR_UNDER_VOLTAGE,
+	FOC_ERROR_ENCODER,
+}foc_error_t;
+
 typedef struct {
 	motor_t motor;
 	foc_mode_t foc_mode;
 	motor_mode_t motor_mode;
+	motor_mode_t last_motor_mode;
+	i2t_t i2t;
+	foc_error_t last_error_flag;
+	foc_error_t error_flag;
 
 	_Bool start_foc;
 	uint32_t init_tick;
@@ -92,7 +99,8 @@ typedef struct {
 	float e_rad;
 	float last_e_rad;
 	float e_omega;
-	float e_rad_window[32];
+	float hfi_e_rad;
+	float smo_e_rad;
 
 	float vd, vq;
 	float id, iq;
@@ -156,10 +164,6 @@ typedef struct {
 	// trajectory
 	s_curve_t trajectory;
 	uint16_t trj_tick; 
-
-	//debug
-	int sample_index;
-	_Bool collect_sample_flag;
 
 	float *p_abs_encoder_error_comp_deg; // ERROR_LUT_SIZE
 	float *p_cogging_torque_comp; // COGGING_TORQUE_LUT_SIZE
@@ -233,6 +237,7 @@ float foc_get_position_set_point(foc_t *hfoc);
 float foc_get_actual_e_rad(foc_t *hfoc);
 void foc_set_cogging_current_comp_enable(foc_t *hfoc, _Bool enable);
 _Bool foc_get_cogging_current_comp_enable(foc_t *hfoc);
+_Bool foc_get_error_flag(foc_t *hfoc, foc_error_t *error_code);
 
 int8_t foc_move_s_curve(foc_t *hfoc, float target_pos);
 

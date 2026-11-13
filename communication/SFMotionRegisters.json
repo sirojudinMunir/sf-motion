@@ -699,7 +699,7 @@
     {
       "address": 92,
       "name": "cogging_current",
-      "format": null,
+      "format": "<f",
       "read": false,
       "write": false,
       "streaming": true
@@ -707,10 +707,66 @@
     {
       "address": 93,
       "name": "following_error",
-      "format": null,
+      "format": "<f",
       "read": true,
       "write": false,
       "streaming": true
+    },
+    {
+      "address": 94,
+      "name": "encd_e_rad",
+      "format": "<f",
+      "read": true,
+      "write": false,
+      "streaming": true
+    },
+    {
+      "address": 95,
+      "name": "hfi_e_rad",
+      "format": "<f",
+      "read": true,
+      "write": false,
+      "streaming": true
+    },
+    {
+      "address": 96,
+      "name": "smo_e_rad",
+      "format": "<f",
+      "read": true,
+      "write": false,
+      "streaming": true
+    },
+    {
+      "address": 97,
+      "name": "i2t_i_rated",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 98,
+      "name": "i2t_i_max",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 99,
+      "name": "i2t_t_max",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 100,
+      "name": "motor_enable",
+      "format": "<B",
+      "read": false,
+      "write": true,
+      "streaming": false
     }
   ],
   "event": [
@@ -721,6 +777,10 @@
     {
       "code": 1,
       "name": "self_commissioning_done"
+    },
+    {
+      "code": 2,
+      "name": "I2T_tripped"
     }
   ]
 }

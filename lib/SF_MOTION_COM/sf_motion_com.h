@@ -37,6 +37,7 @@ typedef enum {
 typedef enum {
   SFM_EVENT_MOVE_DONE,
   SFM_EVENT_SELFCOM_DONE,
+  SFM_EVENT_I2T_TRIPPED,
 }sfm_event_t;
 
 typedef struct {

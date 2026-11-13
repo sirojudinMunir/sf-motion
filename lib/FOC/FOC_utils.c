@@ -10,16 +10,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if DEBUG_HFI
-float param1_debug_buff[MAX_SAMPLE_BUFF];
-float param2_debug_buff[MAX_SAMPLE_BUFF];
-float param3_debug_buff[MAX_SAMPLE_BUFF];
-float param4_debug_buff[MAX_SAMPLE_BUFF];
-#endif
-
-float error_temp[ERROR_LUT_SIZE] = {0};
-
-
 void foc_inverter_init(foc_t *hfoc, void (*enable_motor)(void), void (*disable_motor)(void), uint32_t (*get_pwm_res)(void)) {
     hfoc->enable_motor = enable_motor;
     hfoc->disable_motor = disable_motor;
@@ -104,6 +94,8 @@ void foc_reset(foc_t *hfoc) {
         default:
             break;
     }
+    i2t_reset(&hfoc->i2t);
+    hfoc->error_flag = FOC_ERROR_NONE;
 }
 
 
@@ -396,11 +388,11 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
     foc_fw_set_vs_ref(hfoc, 0.90f * vs_max);
     id_ref += foc_fw_update(hfoc);
 
-    // Hard limit references
-    foc_current_limit(&id_ref, &iq_ref, hfoc->max_current);
-
     // cogging current compensation
     iq_ref += foc_cogging_current_update(hfoc);
+
+    // Hard limit references
+    foc_current_limit(&id_ref, &iq_ref, i2t_get_current_limit(&hfoc->i2t));
 
     // get currents
     motor_calculate_current(&hfoc->motor);
@@ -411,6 +403,14 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
 
     clarke_transform_3input(ia, ib, ic, &i_alpha, &i_beta);
     park_transform(i_alpha, i_beta, sin_theta, cos_theta, &id, &iq);
+
+    // motor protection
+    i2t_update(&hfoc->i2t, id, iq);
+    if (i2t_is_tripped(&hfoc->i2t)) {
+        foc_disable(hfoc);
+        hfoc->error_flag = FOC_ERROR_I2T_TRIPPED;
+        return;
+    }
     
     // LPF id & iq
     hfoc->id_filtered = second_order_lpf_update(&hfoc->id_lpf, id);
@@ -427,6 +427,7 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
         }
 
         _Bool smo_ret = smo_update_arctan(&hfoc->smo, hfoc->v_alpha, hfoc->v_beta, i_alpha, i_beta);
+        hfoc->smo_e_rad = smo_get_rotor_angle(&hfoc->smo);
 
         switch (hfoc->state) {
             case MOTOR_STATE_HFI: {
@@ -436,14 +437,15 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
                 float v_inj = 0.0f;
                 if (hfoc->foc_mode == FOC_MODE_SENSORLESS_SMO_HFI_NEW) {
                     v_inj = hfi_get_v_inj(&hfoc->hfi);
-                    hfoc->e_rad = hfi_get_estimate_position(&hfoc->hfi);
+                    hfoc->hfi_e_rad = hfi_get_estimate_position(&hfoc->hfi);
                     hfoc->e_omega = hfi_get_estimate_omega(&hfoc->hfi);
                 }
                 else {
                     v_inj = hfi_lpf_get_v_inj(&hfoc->hfi_lpf);
-                    hfoc->e_rad = hfi_lpf_get_estimate_position(&hfoc->hfi_lpf);
+                    hfoc->hfi_e_rad = hfi_lpf_get_estimate_position(&hfoc->hfi_lpf);
                     hfoc->e_omega = hfi_lpf_get_estimate_omega(&hfoc->hfi_lpf);
                 }
+                hfoc->e_rad = hfoc->hfi_e_rad;
 
                 if (hfoc->pd_state > P_DET_START && hfoc->pd_state < P_DET_STOP)
                     vd_ref = hfoc->pd_v_pulse;
@@ -465,7 +467,7 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
                     hfoc->state = MOTOR_STATE_HFI;
                     break;
                 }
-                hfoc->e_rad = smo_get_rotor_angle(&hfoc->smo);
+                hfoc->e_rad = hfoc->smo_e_rad;
                 hfoc->e_omega = smo_get_omega(&hfoc->smo);
                 hfoc->actual_rpm = (hfoc->e_omega * 60.0f / TWO_PI) / hfoc->pole_pairs;
                 if (hfoc->foc_mode == FOC_MODE_SENSORLESS_SMO_HFI_NEW) {
@@ -479,20 +481,6 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
             default:
             break;
         }
-#if DEBUG_HFI
-        if (!hfoc->collect_sample_flag){
-            int n = hfoc->sample_index;
-            param1_debug_buff[n] = hfoc->hfi.sdft_fundamental;
-            param2_debug_buff[n] = hfoc->hfi.sdft_amplitude;
-            param3_debug_buff[n] = hfoc->encoder_e_angle_rad;
-            // param4_debug_buff[n] = hfoc->pd_v_pulse;
-            hfoc->sample_index++;
-            if (hfoc->sample_index > MAX_SAMPLE_BUFF) {
-                hfoc->sample_index = 0;
-                hfoc->collect_sample_flag = 1;
-            }
-        }
-#endif
     }
     else if (hfoc->foc_mode == FOC_MODE_HYBRID) {
         id_error = id_ref - id;
@@ -704,12 +692,13 @@ float foc_get_motor_flux_linkage(foc_t *hfoc) {
 
 void foc_disable(foc_t *hfoc) {
     hfoc->disable_motor();
-    foc_reset(hfoc);
-    hfoc->motor_mode = MOTOR_MODE_DISABLE;
+    hfoc->last_motor_mode = hfoc->motor_mode;
+    foc_set_motor_mode(hfoc, MOTOR_MODE_DISABLE);
 }
 
 void foc_enable(foc_t *hfoc) {
     hfoc->enable_motor();
+    foc_set_motor_mode(hfoc, hfoc->last_motor_mode);
 }
 
 void foc_set_fw_enable(foc_t *hfoc, _Bool enable) {
@@ -787,4 +776,13 @@ void foc_set_cogging_current_comp_enable(foc_t *hfoc, _Bool enable) {
 
 _Bool foc_get_cogging_current_comp_enable(foc_t *hfoc) {
     return hfoc->cogging_current_comp_enable;
+}
+
+_Bool foc_get_error_flag(foc_t *hfoc, foc_error_t *error_code) {
+    if (hfoc->last_error_flag != hfoc->error_flag) {
+        hfoc->last_error_flag = hfoc->error_flag;
+        *error_code = hfoc->error_flag;
+        return 1;
+    }
+    return 0;
 }

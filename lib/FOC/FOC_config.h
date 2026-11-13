@@ -16,8 +16,6 @@
 
 #define MAX_SAMPLE_BUFF 1024
 
-#define DEBUG_HFI	0
-
 #define HFI_NEW 1
 
 /* HFI amplitudo (V) */
