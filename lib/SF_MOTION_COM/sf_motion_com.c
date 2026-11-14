@@ -478,6 +478,12 @@ SFM_SETTER(set_i2t_i_max, com->pfoc->i2t.i_max = *(float *)data)
 SFM_GETTER(get_i2t_t_max, *(float *)data = com->pfoc->i2t.t_max)
 SFM_SETTER(set_i2t_t_max, com->pfoc->i2t.t_max = *(float *)data)
 
+SFM_GETTER(get_under_voltage, *(float *)data = com->pfoc->vbus_prot.uv_trip)
+SFM_GETTER(set_under_voltage, com->pfoc->vbus_prot.uv_trip = *(float *)data)
+
+SFM_GETTER(get_over_voltage, *(float *)data = com->pfoc->vbus_prot.ov_trip)
+SFM_GETTER(set_over_voltage, com->pfoc->vbus_prot.ov_trip = *(float *)data)
+
 /************************************************************************************************ */
 
 typedef struct {
@@ -601,8 +607,10 @@ sfm_com_register_handler_t sfm_com_reg[] = {
   {get_i2t_i_rated, set_i2t_i_rated, SFM_COM_STREAM_DIS, sizeof(float)},                    // 97
   {get_i2t_i_max, set_i2t_i_max, SFM_COM_STREAM_DIS, sizeof(float)},                        // 98
   {get_i2t_t_max, set_i2t_t_max, SFM_COM_STREAM_DIS, sizeof(float)},                        // 99
+  {get_under_voltage, set_under_voltage, SFM_COM_STREAM_DIS, sizeof(float)},                // 100
+  {get_over_voltage, set_over_voltage, SFM_COM_STREAM_DIS, sizeof(float)},                  // 101
 
-  {NULL, set_motor_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                            // 100
+  {NULL, set_motor_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                            // 102
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);

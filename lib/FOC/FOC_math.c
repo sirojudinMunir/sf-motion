@@ -55,18 +55,6 @@ float fast_atan2(float y, float x) {
     return r;
 }
 
-float fast_sqrt(float x) {
-    if (x <= 0.0f) return 0.0f;
-    
-    float guess = x;
-    
-    for (int i = 0; i < 5; i++) {
-        guess = 0.5f * (guess + x / guess);
-    }
-    
-    return guess;
-}
-
 void pre_calc_sin_cos(float theta, float *sin_theta, float *cos_theta) {
     *sin_theta = fast_sin(theta);
     *cos_theta = fast_cos(theta);

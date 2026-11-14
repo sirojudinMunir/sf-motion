@@ -76,7 +76,7 @@ int smo_update_arctan(smo_t *hsmo, float v_alpha, float v_beta,
     hsmo->last_i_alpha_error = i_alpha_error;
     hsmo->last_i_beta_error = i_beta_error;
 
-    hsmo->emf_magnitude = sqrtf(hsmo->e_alpha_est * hsmo->e_alpha_est + 
+    hsmo->emf_magnitude = fast_sqrt(hsmo->e_alpha_est * hsmo->e_alpha_est + 
                                hsmo->e_beta_est * hsmo->e_beta_est);
     
     // estimate angle position and speed

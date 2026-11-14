@@ -279,9 +279,9 @@ void foc_MTPA(foc_t *hfoc, float Is, float *Id_ref, float *Iq_ref) {
         return;
     }
     float Is_square = Is * Is;
-    float temp = sqrtf(hfoc->flux_linkage * hfoc->flux_linkage + 8.0f * (L_diff * L_diff) * Is_square);
+    float temp = fast_sqrt(hfoc->flux_linkage * hfoc->flux_linkage + 8.0f * (L_diff * L_diff) * Is_square);
     float id = (hfoc->flux_linkage - temp) / (4.0f * L_diff);
-    float iq = sqrtf(Is_square - id * id);
+    float iq = fast_sqrt(Is_square - id * id);
     if (Is < 0) iq = -iq;
 
     *Id_ref = id;
@@ -294,7 +294,7 @@ void foc_fw_set_vs_ref(foc_t *hfoc, float vs_ref) {
 
 float foc_fw_update(foc_t *hfoc) {
     if (!hfoc->fw_enable) return 0.0f;
-    float vs = sqrtf(hfoc->vd * hfoc->vd + hfoc->vq * hfoc->vq);
+    float vs = fast_sqrt(hfoc->vd * hfoc->vd + hfoc->vq * hfoc->vq);
     float error = hfoc->fw_vs_ref - vs;
     float mv = pi_control(&hfoc->fw_ctrl, error);
     if (mv > 0.0f) mv = 0.0f;
@@ -308,7 +308,7 @@ void foc_current_limit(float *id_ref, float *iq_ref, float max_current) {
     else if (*id_ref < -max_current) {
         *id_ref = -max_current;
     }
-    float max_iq = sqrtf(max_current * max_current - *id_ref * *id_ref);
+    float max_iq = fast_sqrt(max_current * max_current - *id_ref * *id_ref);
     if (*iq_ref > max_iq) {
         *iq_ref = max_iq;
     }
@@ -520,7 +520,7 @@ void foc_current_control_update(foc_t *hfoc, float Ts) {
     pid_set_out_constraint(&hfoc->id_ctrl, vs_max, -vs_max);
     vd_ref += pi_control(&hfoc->id_ctrl, id_error);
 
-    float vq_max = sqrtf(vs_max * vs_max - vd_ref * vd_ref);
+    float vq_max = fast_sqrt(vs_max * vs_max - vd_ref * vd_ref);
     pid_set_out_constraint(&hfoc->iq_ctrl, vq_max, -vq_max);
     vq_ref = pi_control(&hfoc->iq_ctrl, iq_error);
 
@@ -584,18 +584,37 @@ int8_t foc_move_s_curve(foc_t *hfoc, float target_pos) {
     return 0;
 }
 
+__attribute__((section(".ramfunc"), noinline))
 void foc_update(foc_t *hfoc, float Ts) {
     foc_sensored_calc_electric_angle(hfoc);
     foc_get_mech_degree(hfoc);
-    foc_trajectory_update(hfoc, Ts);
+    // foc start delay
     if (!hfoc->start_foc) {
         hfoc->init_tick++;
-        if (hfoc->init_tick > 100) {
+        if (hfoc->init_tick > (uint32_t)(0.5f / Ts)) {
             hfoc->start_foc = 1;
             foc_reset(hfoc);
         }
         return;
     }
+    // voltage protection
+    if (vbus_update(&hfoc->vbus_prot, hfoc->v_bus)) {
+        uint8_t vbus_fault = vbus_get_fault(&hfoc->vbus_prot);
+        if (vbus_fault != VBUS_FAULT_NONE) {
+            foc_disable(hfoc);
+            if (vbus_fault & VBUS_FAULT_UV) {
+                hfoc->error_flag = FOC_ERROR_UNDER_VOLTAGE;
+            }
+            else if (vbus_fault & VBUS_FAULT_OV) {
+                hfoc->error_flag = FOC_ERROR_OVER_VOLTAGE;
+            }
+            return;
+        }
+        else {
+            foc_enable(hfoc);
+        }
+    }
+    foc_trajectory_update(hfoc, Ts);
     switch (hfoc->motor_mode) {
         case MOTOR_MODE_TORQUE_CONTROL: {
             foc_current_control_update(hfoc, Ts);

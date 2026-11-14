@@ -1,5 +1,5 @@
 /**
- * i2t.hi2t - i2t (thermal overload) motor protection for FOC drives
+ * i2t.h - i2t (thermal overload) motor protection for FOC drives
  *
  * Model:  acc += (I^2 - I_rated^2) * dt        (acc clamped to >= 0)
  *         trip when acc >= (I_max^2 - I_rated^2) * t_max
@@ -8,8 +8,6 @@
  *  - Below rated current the accumulator cools down (cool_gain scales this).
  *  - After a trip the fault stays latched until the accumulator has cooled
  *    below reset_ratio (hysteresis), then it clears automatically.
- *  - Optional soft derating: i2t_GetCurrentLimit() gives a current limit you
- *    can use to clamp Iq_ref before the hard trip happens.
  *
  * All currents must use the SAME unit and scaling (e.g. amps, peak value of
  * the phase current, as given by the amplitude-invariant Clarke/Park).

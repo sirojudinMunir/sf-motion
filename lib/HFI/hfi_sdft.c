@@ -44,7 +44,7 @@ void hfi_update_estimate_position(hfi_t *hhfi, float iq, float Ts) {
     hhfi->last_Xk_iq = Xk_new;
     
     // Extract amplitude (eq 14)
-    hhfi->sdft_amplitude = 2.0f * sqrtf(Xk_new.real * Xk_new.real + Xk_new.imag * Xk_new.imag) / (float)N;
+    hhfi->sdft_amplitude = 2.0f * fast_sqrt(Xk_new.real * Xk_new.real + Xk_new.imag * Xk_new.imag) / (float)N;
 
     // i_gamma1 (eq 17)
     float theta_0 = fast_atan2(Xk_new.imag, Xk_new.real);

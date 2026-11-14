@@ -53,8 +53,8 @@ void storage_default_config(storage_t *s) {
     s->memory.protection.i2t_i_rated = 3.0f;
     s->memory.protection.i2t_i_max = 5.0f;
     s->memory.protection.i2t_t_max = 10.0f;
-    s->memory.protection.min_voltage = 10.0f;
-    s->memory.protection.max_voltage = 25.0f;
+    s->memory.protection.under_voltage = 10.0f;
+    s->memory.protection.over_voltage = 25.0f;
 
     s->memory.speed_control.kp = 0.01f;
     s->memory.speed_control.ki = 0.1f;
@@ -184,6 +184,8 @@ void storage_copy_from_local(storage_t *s, foc_t *hfoc) {
     s->memory.protection.i2t_i_rated = hfoc->i2t.i_rated;
     s->memory.protection.i2t_i_max = hfoc->i2t.i_max;
     s->memory.protection.i2t_t_max = hfoc->i2t.t_max;
+    s->memory.protection.under_voltage = hfoc->vbus_prot.uv_trip;
+    s->memory.protection.over_voltage = hfoc->vbus_prot.ov_trip;
 
     // Speed Control
     s->memory.speed_control.kp = hfoc->speed_ctrl.kp;

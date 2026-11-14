@@ -97,8 +97,8 @@ typedef struct {
     float i2t_i_rated;
     float i2t_i_max;
     float i2t_t_max;
-    float min_voltage;
-    float max_voltage;
+    float under_voltage;
+    float over_voltage;
 }storage_protection_t;
 
 typedef struct {

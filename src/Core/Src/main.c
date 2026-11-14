@@ -232,6 +232,9 @@ static void init_foc(void) {
                 hstorage1.memory.protection.i2t_i_rated,
                 hstorage1.memory.protection.i2t_i_max,
                 hstorage1.memory.protection.i2t_t_max);
+  float uv = hstorage1.memory.protection.under_voltage;
+  float ov = hstorage1.memory.protection.over_voltage;
+  vbus_init(&hfoc1.vbus_prot, uv, ov, FOC_TS);
   foc_inverter_init(&hfoc1, motor1_inverter_enable, motor1_inverter_disable, motor1_get_pwm_res);
   foc_feedback_sensor_init(&hfoc1, 
                           motor1_as5047p_get_mech_deg, 
@@ -276,7 +279,7 @@ static void init_foc(void) {
   // foc_set_mode(&hfoc1, FOC_MODE_SENSORLESS_SMO_HFI_NEW);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
-  HAL_Delay(500);
+  // HAL_Delay(500);
   link_enable_pwm(&htim1);
   link_enable_adc(&hadc1);
   foc_enable(&hfoc1);
@@ -332,6 +335,16 @@ static void event_update(void) {
       case FOC_ERROR_I2T_TRIPPED: {
         sfm_com_send_event(&husb_com, SFM_EVENT_I2T_TRIPPED);
         sfm_com_send_event(&hcan_com, SFM_EVENT_I2T_TRIPPED);
+        break;
+      }
+      case FOC_ERROR_OVER_VOLTAGE: {
+        sfm_com_send_event(&husb_com, SFM_EVENT_OVER_VOLTAGE);
+        sfm_com_send_event(&hcan_com, SFM_EVENT_OVER_VOLTAGE);
+        break;
+      }
+      case FOC_ERROR_UNDER_VOLTAGE: {
+        sfm_com_send_event(&husb_com, SFM_EVENT_UNDER_VOLTAGE);
+        sfm_com_send_event(&hcan_com, SFM_EVENT_UNDER_VOLTAGE);
         break;
       }
       default:

@@ -40,7 +40,6 @@ void norm_angle_rad(float *theta);
 float fast_sin(float theta);
 float fast_cos(float theta);
 float fast_atan2(float y, float x);
-float fast_sqrt(float x);
 complex_t complex_multiply(complex_t a, complex_t b);
 complex_t complex_add(complex_t a, complex_t b);
 complex_t complex_subtract(complex_t a, complex_t b);
@@ -57,5 +56,9 @@ void svpwm(float valpha, float vbeta, float vbus, uint32_t pwm_period,
 			uint32_t *pwm_u, uint32_t *pwm_v, uint32_t *pwm_w);
 
 void vabc_to_vdq(float va, float vb, float vc, float sin_theta, float cos_theta, float *vd, float *vq);
+
+static inline float fast_sqrt(float x) {
+    return (x > 0.0f) ? __builtin_sqrtf(x) : 0.0f;
+}
 
 #endif /* FOC_INC_FOC_MATH_H_ */

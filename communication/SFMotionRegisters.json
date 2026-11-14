@@ -762,6 +762,22 @@
     },
     {
       "address": 100,
+      "name": "under_voltage",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 101,
+      "name": "over_voltage",
+      "format": "<f",
+      "read": true,
+      "write": true,
+      "streaming": false
+    },
+    {
+      "address": 102,
       "name": "motor_enable",
       "format": "<B",
       "read": false,
@@ -781,6 +797,14 @@
     {
       "code": 2,
       "name": "I2T_tripped"
+    },
+    {
+      "code": 3,
+      "name": "over_voltage_error"
+    },
+    {
+      "code": 4,
+      "name": "under_voltage_error"
     }
   ]
 }

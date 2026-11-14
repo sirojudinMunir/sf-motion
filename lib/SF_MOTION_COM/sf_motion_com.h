@@ -38,6 +38,8 @@ typedef enum {
   SFM_EVENT_MOVE_DONE,
   SFM_EVENT_SELFCOM_DONE,
   SFM_EVENT_I2T_TRIPPED,
+  SFM_EVENT_OVER_VOLTAGE,
+  SFM_EVENT_UNDER_VOLTAGE,
 }sfm_event_t;
 
 typedef struct {

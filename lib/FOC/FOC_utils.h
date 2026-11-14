@@ -13,6 +13,7 @@
 #include "FOC_math.h"
 #include "pid_utils.h"
 #include "i2t.h"
+#include "vbus_protection.h"
 #include "impedance_control.h"
 #include "sliding_mode_observer.h"
 #include "pll.h"
@@ -76,6 +77,7 @@ typedef struct {
 	motor_mode_t motor_mode;
 	motor_mode_t last_motor_mode;
 	i2t_t i2t;
+	vbus_t vbus_prot;
 	foc_error_t last_error_flag;
 	foc_error_t error_flag;
 

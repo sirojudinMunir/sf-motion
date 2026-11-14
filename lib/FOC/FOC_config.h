@@ -19,7 +19,7 @@
 #define HFI_NEW 1
 
 /* HFI amplitudo (V) */
-#define HFI_AMP 2.0f
+#define HFI_AMP 1.5f
 
 /* HFI frequency (Hz) */
 #define HFI_FREQ 4000.0f
@@ -32,7 +32,7 @@
 #define HFI_I_ALPHA_BETA_LPF_FC 200.0f
 
 /* HFI to SMO speed threshold (RPM) */
-#define HFI_TO_SMO_THRESHOLD 300.0f
+#define HFI_TO_SMO_THRESHOLD 400.0f
 #define SMO_TO_HFI_THRESHOLD 200.0f
 
 /* Polarity Detection Parameters */
