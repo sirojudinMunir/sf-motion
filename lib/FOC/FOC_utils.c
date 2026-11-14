@@ -53,6 +53,8 @@ void foc_set_limit_current(foc_t *hfoc, float i_limit) {
 }
 
 void foc_reset(foc_t *hfoc) {
+    s_curve_reset(&hfoc->trajectory, hfoc->actual_angle);
+    hfoc->pos_ref = hfoc->actual_angle;
     pid_reset(&hfoc->id_ctrl);
     pid_reset(&hfoc->iq_ctrl);
     pid_reset(&hfoc->speed_ctrl);

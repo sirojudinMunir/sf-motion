@@ -41,6 +41,7 @@ typedef struct {
 } s_curve_t;
 
 int8_t s_curve_start(s_curve_t *sc, float start_pos, float target_pos);
+void s_curve_reset(s_curve_t *sc, float initial_pos);
 void s_curve_set_v_max(s_curve_t *sc, float v_max);
 void s_curve_set_a_max(s_curve_t *sc, float a_max);
 void s_curve_set_j_max(s_curve_t *sc, float j_max);

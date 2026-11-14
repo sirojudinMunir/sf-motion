@@ -3,6 +3,20 @@
 
 static float f_abs(float x) { return x < 0.0f ? -x : x; }
 
+void s_curve_reset(s_curve_t *sc, float initial_pos) {
+    if (!sc) return;
+
+    sc->start_pos = initial_pos;
+    sc->target_pos = initial_pos;
+    sc->direction = 1.0f;
+    sc->distance = 0.0f;
+    sc->time = 0.0f;
+    sc->pos = initial_pos;
+    sc->velocity = 0.0f;
+    sc->acceleration = 0.0f;
+    sc->finished = 1;
+}
+
 int8_t s_curve_start(s_curve_t *sc, float start_pos, float target_pos) {
   float v_max = sc->v_max;
   float a_max = sc->a_max;

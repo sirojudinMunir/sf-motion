@@ -472,8 +472,8 @@ class LivePlotter(QtWidgets.QMainWindow):
             # self.motor.enable_streaming(motor.channel.smo_e_rad)
             # self.motor.enable_streaming(motor.channel.m_angle_rad_comp)
             # self.motor.enable_streaming(motor.channel.actual_rpm)
-            # self.motor.enable_streaming(motor.channel.pos_ref)
-            # self.motor.enable_streaming(motor.channel.actual_angle)
+            self.motor.enable_streaming(motor.channel.pos_ref)
+            self.motor.enable_streaming(motor.channel.actual_angle)
             # self.motor.enable_streaming(motor.channel.following_error)
             
         except serial.SerialException as e:
