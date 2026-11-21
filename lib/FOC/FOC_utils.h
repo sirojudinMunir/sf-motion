@@ -23,6 +23,7 @@
 #include "hfi_lpf.h"
 #include "motor.h"
 #include "trajectory.h"
+#include "pvt.h"
 
 #define ERROR_LUT_SIZE (1024)
 #define COGGING_TORQUE_LUT_SIZE (1024)
@@ -166,6 +167,7 @@ typedef struct {
 	// trajectory
 	s_curve_t trajectory;
 	uint16_t trj_tick; 
+	pvt_t pvt;
 
 	float *p_abs_encoder_error_comp_deg; // ERROR_LUT_SIZE
 	float *p_cogging_torque_comp; // COGGING_TORQUE_LUT_SIZE

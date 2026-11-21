@@ -7,7 +7,9 @@ void hfi_init(hfi_t *hhfi, float v_h, float f_h, float sampling_freq) {
     hhfi->omega_h = TWO_PI * f_h;
     hhfi->v_h = v_h;
     hhfi->f_h = f_h;
+
     pll_init(&hhfi->pll, 2000.0f, 6000.0f, 1.0f, 50000.0f);
+    // pll_init_bandwidth(&hhfi->pll, TWO_PI*100.0f, 0.7f, 1.0f, 50000.0f, 1.0f/sampling_freq, 100.0f);
     
     hhfi->sdft_buff_idx = 0;
     hhfi->sdft_window_size = sampling_freq / f_h;

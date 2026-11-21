@@ -586,6 +586,14 @@ int8_t foc_move_s_curve(foc_t *hfoc, float target_pos) {
     return 0;
 }
 
+void foc_pvt_update(foc_t *hfoc) {
+    pvt_update(&hfoc->pvt);
+    if (hfoc->motor_mode == MOTOR_MODE_IMPEDANCE_CONTROL && hfoc->pvt.run) {
+        hfoc->pos_ref = hfoc->pvt.current_point.position;
+        hfoc->rpm_ref = hfoc->pvt.current_point.velocity / 6.0f;
+    }
+}
+
 __attribute__((section(".ramfunc"), noinline))
 void foc_update(foc_t *hfoc, float Ts) {
     foc_sensored_calc_electric_angle(hfoc);
@@ -617,6 +625,7 @@ void foc_update(foc_t *hfoc, float Ts) {
         }
     }
     foc_trajectory_update(hfoc, Ts);
+    foc_pvt_update(hfoc);
     switch (hfoc->motor_mode) {
         case MOTOR_MODE_TORQUE_CONTROL: {
             foc_current_control_update(hfoc, Ts);

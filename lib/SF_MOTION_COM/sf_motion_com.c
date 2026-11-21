@@ -486,6 +486,38 @@ SFM_GETTER(set_over_voltage, com->pfoc->vbus_prot.ov_trip = *(float *)data)
 
 /************************************************************************************************ */
 
+static int8_t set_pvt_fill_buffer(sfm_com_t *com, void *data) {
+  uint8_t *buffer = (uint8_t *)data;
+  float pos;
+  int16_t vel;
+  memcpy(&pos, &buffer[0], sizeof(float));
+  memcpy(&vel, &buffer[4], sizeof(int16_t));
+  pvt_point_t point;
+  point.position = pos;
+  point.velocity = (float)vel;
+  if (pvt_fill_buffer(&com->pfoc->pvt, point) != 0) return -1;
+  return 0;
+}
+
+static int8_t set_pvt_run(sfm_com_t *com, void *data) {
+  uint8_t run = *(uint8_t *)data;
+  if (run == 1) {
+    pvt_run(&com->pfoc->pvt);
+    if (com->pfoc->pvt.run &&
+        com->pfoc->motor_mode == MOTOR_MODE_IMPEDANCE_CONTROL) {
+      // Apply the first point before the next FOC cycle to prevent a brief
+      // stale position reference at the start of the move.
+      com->pfoc->pos_ref = com->pfoc->pvt.current_point.position;
+      com->pfoc->rpm_ref = com->pfoc->pvt.current_point.velocity / 6.0f;
+    }
+  } else {
+    pvt_stop(&com->pfoc->pvt);
+  }
+  return 0;
+}
+
+/************************************************************************************************ */
+
 typedef struct {
   sfm_com_read_t com_read;
   sfm_com_write_t com_write;
@@ -611,12 +643,15 @@ sfm_com_register_handler_t sfm_com_reg[] = {
   {get_over_voltage, set_over_voltage, SFM_COM_STREAM_DIS, sizeof(float)},                  // 101
 
   {NULL, set_motor_enable, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                            // 102
+
+  {NULL, set_pvt_fill_buffer, SFM_COM_STREAM_DIS, sizeof(float) + sizeof(int16_t)},         // 103
+  {NULL, set_pvt_run, SFM_COM_STREAM_DIS, sizeof(uint8_t)},                                 // 104
 };
 
 const int SFM_COM_MAX = sizeof(sfm_com_reg) / sizeof(sfm_com_register_handler_t);
 
 static int8_t sfm_com_handle_all_parameters(sfm_com_t *com) {
-  uint8_t value[4];
+  uint8_t value[6];
   int idx = sfm_com_get_address(com);
   if (idx >= SFM_COM_MAX) {
     return -1;

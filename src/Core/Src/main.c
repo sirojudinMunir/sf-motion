@@ -172,8 +172,11 @@ int can_recv_data(uint8_t *data, uint16_t len) {
 }
 
 int can_send_data(uint8_t *data, uint16_t len) {
+  if (len < 2 || len - 2 > 8) return -1;
   uint32_t can_std_id = (data[0] << 8) | data[1];
-  return link_can_send_data(can_std_id, data + 2, len);
+  // The command type and node ID are encoded in the CAN identifier, so only
+  // send the remaining bytes (address and register data) in the CAN payload.
+  return link_can_send_data(can_std_id, data + 2, len - 2);
 }
 
 /**************************************************************************** */
@@ -259,6 +262,7 @@ static void init_foc(void) {
               link_system_reset,
               &hfoc1, &hstorage1, &hsc1);
 
+  pvt_init(&hfoc1.pvt, 40);
   // Id PI parameter
   pid_reset(&hfoc1.id_ctrl);
   pid_set_ts(&hfoc1.id_ctrl, FOC_TS);
@@ -279,11 +283,9 @@ static void init_foc(void) {
   // foc_set_mode(&hfoc1, FOC_MODE_SENSORLESS_SMO_HFI_NEW);
   foc_sensorless_init(&hfoc1, BLDC_PWM_FREQ);
 
-  // HAL_Delay(500);
   link_enable_pwm(&htim1);
   link_enable_adc(&hadc1);
   foc_enable(&hfoc1);
-  // foc_set_motor_mode(&hfoc1, hstorage1.memory.motor_config.motor_mode);
 #endif
 }
 
@@ -390,6 +392,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
   uint32_t id;
   if (link_can_recv_data(&id, hcan_com.data_rx, &hcan_com.data_rx_len) == 0) {
+    // CAN ID reconstruction contributes the first two bytes of the SFM frame.
+    hcan_com.data_rx_len += 2;
     hcan_com.incomming_data_flag = 1;
   }
 }

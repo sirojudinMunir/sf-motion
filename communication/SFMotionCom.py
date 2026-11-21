@@ -113,7 +113,7 @@ class SFMotion:
     def _send_frame(self, com_type, address, data=b""):
         payload = bytes([com_type, self.node_id, address]) + data
         frame = (self.HEADER + bytes([len(payload)]) + payload)
-        # print(f"TX: {frame.hex(' ')}")
+        print(f"TX: {frame.hex(' ')}")
         self.ser.write(frame)
 
     def read(self, address):
@@ -204,7 +204,34 @@ class SFMotion:
         return major, minor, patch
     
     # ----------------------------------------------------------------------------------
+
+    def write_pvt(self, pos, vel):
+        address = 103
+        data = struct.pack("<fh", pos, vel)
+        self._send_frame(SFMComType.WRITE, address, data)
+
+        response_node_id, response_address, response_data = (
+            self.acq_thread.response_queue.get(timeout=2)
+        )
+
+        if response_node_id != self.node_id:
+            raise RuntimeError(f"Unexpected node ID: {response_node_id}")
+        if response_address != address:
+            raise RuntimeError(f"Unexpected address: {response_address}")
+        if len(response_data) != 1:
+            raise RuntimeError(f"Invalid response length: {len(response_data)}")
+
+        status = struct.unpack("<b", response_data)[0]
+        if status == -1:
+            # PVT buffer is full; callers may retry after playback consumes a point.
+            return -1
+        if status != 0:
+            raise RuntimeError(f"Device returned error: {status}")
+
+        return True
     
+    # ----------------------------------------------------------------------------------
+
     def set_impedance_control(self, kp, kd):
         self.set_impedance_stiffness(kp)
         self.set_impedance_damping(kd)
@@ -311,6 +338,56 @@ class SFMotion:
         self.set_trajectory_a_max(a_max)
         self.set_trajectory_j_max(j_max)
         self.set_trajectory_target_pos(target_pos)
+
+    def test_pvt_s_curve(self, target_pos=10.0, duration=2.0, samples=101):
+        if duration <= 0:
+            raise ValueError("duration must be positive")
+        if not 2 <= samples <= 256:
+            raise ValueError("samples must be between 2 and the 256-point PVT capacity")
+        start_pos = self.get_pos_ref()
+        distance = target_pos - start_pos
+        for i in range(samples):
+            t = duration * i / (samples - 1)
+            u = t / duration
+            # Quintic smoothstep gives a jerk-limited shaped position profile
+            # with zero velocity and acceleration at both ends.
+            blend = 10 * u**3 - 15 * u**4 + 6 * u**5
+            d_blend_du = 30 * u**2 - 60 * u**3 + 30 * u**4
+            pos = start_pos + distance * blend
+            vel = round(distance * d_blend_du / duration)
+            self.write_pvt(pos, vel)
+        self.set_pvt_run(1)
+
+    def test_pvt_sin(self, amplitude=30.0, frequency=1.0):
+        if amplitude < 0:
+            raise ValueError("amplitude must be non-negative")
+        if frequency <= 0:
+            raise ValueError("frequency must be positive")
+        peak_velocity = amplitude * 2.0 * np.pi * frequency
+        if peak_velocity > 32767:
+            raise ValueError("peak velocity exceeds the PVT int16 range")
+
+        sample_period = 0.001
+        buffer_size = 256
+        center_pos = self.get_pos_ref()
+        omega = 2.0 * np.pi * frequency
+        count = 0
+
+        while True:
+            t = count * sample_period
+            pos = float(center_pos + amplitude * np.sin(omega * t))
+            # PVT velocity is transmitted as int16 in position-units per second.
+            vel = int(round(amplitude * omega * np.cos(omega * t)))
+            result = self.write_pvt(pos, vel)
+            while result == -1:
+                result = self.write_pvt(pos, vel)
+
+            count += 1
+            if count == buffer_size:
+            # Start only after the initial 256 ms trajectory window is ready.
+                self.set_pvt_run(1)
+            elif count > buffer_size and count % buffer_size == 0:
+                print(f"PVT samples sent: {count}")
 
 
 

@@ -783,6 +783,14 @@
       "read": false,
       "write": true,
       "streaming": false
+    },
+    {
+      "address": 104,
+      "name": "pvt_run",
+      "format": "<B",
+      "read": false,
+      "write": true,
+      "streaming": false
     }
   ],
   "event": [
